@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 export default function Header() {
   return (
     <header className="bg-blue-500 p-4">
@@ -8,9 +10,11 @@ export default function Header() {
           Workplace Booking
         </h1>
         <div className="flex gap-4">
-          <button className="bg-white text-blue-500 px-4 py-2 rounded hover:bg-blue-50 transition-colors cursor-pointer">
-            Home
-          </button>
+          <Link href="/">
+            <button className="bg-white text-blue-500 px-4 py-2 rounded hover:bg-blue-50 transition-colors cursor-pointer">
+              Home
+            </button>
+          </Link>
           <button className="bg-white text-blue-500 px-4 py-2 rounded hover:bg-blue-50 transition-colors cursor-pointer">
             Profil
           </button>
