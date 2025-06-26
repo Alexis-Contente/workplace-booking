@@ -16,13 +16,13 @@ export default function Header() {
             </button>
           </Link>
           <button className="bg-white text-blue-500 px-4 py-2 rounded hover:bg-blue-50 transition-colors cursor-pointer">
-            Profil
+            Profile
           </button>
           <button className="bg-white text-blue-500 px-4 py-2 rounded hover:bg-blue-50 transition-colors cursor-pointer">
-            Réservation
+            Reservation
           </button>
           <button className="bg-white text-blue-500 px-4 py-2 rounded hover:bg-blue-50 transition-colors cursor-pointer">
-            À propos
+            About
           </button>
         </div>
       </div>

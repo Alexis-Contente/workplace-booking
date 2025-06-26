@@ -11,11 +11,11 @@ export default function NotFound() {
           <div className="mb-8">
             <h1 className="text-9xl font-bold text-blue-500 mb-4">404</h1>
             <h2 className="text-3xl font-semibold text-gray-800 mb-4">
-              Page non trouvée
+              Page not found{" "}
             </h2>
             <p className="text-gray-600 mb-8">
-              Désolé, la page que vous recherchez n&apos;existe pas ou a été
-              déplacée.
+              Sorry, the page you are looking for does not exist or has been
+              moved.
             </p>
           </div>
 
@@ -24,15 +24,15 @@ export default function NotFound() {
               href="/"
               className="inline-block bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200"
             >
-              🏠 Retour à l&apos;accueil
+              Return to the home page
             </Link>
 
             <div className="text-sm text-gray-500">
-              <p>Ou essayez de :</p>
+              <p>Or try:</p>
               <ul className="mt-2 space-y-1">
-                <li>• Vérifier l&apos;URL</li>
-                <li>• Utiliser le menu de navigation</li>
-                <li>• Contacter l&apos;administrateur</li>
+                <li>• Check the URL</li>
+                <li>• Use the navigation menu</li>
+                <li>• Contact the administrator</li>
               </ul>
             </div>
           </div>
