@@ -1,49 +1,364 @@
-import Link from "next/link";
+"use client";
+
+import { useState, useEffect } from "react";
+import { useAuth } from "../../hooks/useAuth";
+import { getUserBookings, cancelBooking } from "../../lib/desk-helpers";
+import type { Booking } from "../../lib/desk-helpers";
+import ProtectedRoute from "../../components/ProtectedRoute";
 import Header from "../components/header";
 import Footer from "../components/footer";
-import ProtectedRoute from "../../components/ProtectedRoute";
+import Link from "next/link";
+
+interface BookingWithDesk extends Booking {
+  desks: {
+    name: string;
+    location: string;
+  };
+}
 
 export default function ReservationsPage() {
+  const { user } = useAuth();
+  const [bookings, setBookings] = useState<BookingWithDesk[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Récupérer les réservations
+  const fetchBookings = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { bookings: fetchedBookings, error: fetchError } =
+        await getUserBookings(user?.id, 50);
+
+      if (fetchError) {
+        setError("Failed to load your reservations");
+        console.error("Error fetching bookings:", fetchError);
+      } else {
+        setBookings(fetchedBookings as BookingWithDesk[]);
+      }
+    } catch (err) {
+      setError("An unexpected error occurred");
+      console.error("Unexpected error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Annuler une réservation
+  const handleCancelBooking = async (bookingId: string, deskName: string) => {
+    setActionLoading(bookingId);
+    setError(null);
+    setSuccessMessage(null);
+
+    try {
+      const { success, error: cancelError } = await cancelBooking(bookingId);
+
+      if (cancelError || !success) {
+        setError("Failed to cancel booking");
+        console.error("Cancel error:", cancelError);
+      } else {
+        // Rafraîchir les données
+        await fetchBookings();
+        setSuccessMessage(`Booking for ${deskName} cancelled successfully! ✅`);
+        setTimeout(() => setSuccessMessage(null), 3000);
+      }
+    } catch (err) {
+      setError("An unexpected error occurred");
+      console.error("Unexpected cancel error:", err);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchBookings();
+    }
+  }, [user]);
+
+  // Séparer les réservations par catégorie
+  const today = new Date().toISOString().split("T")[0];
+  const upcomingBookings = bookings.filter((b) => b.booking_date >= today);
+  const pastBookings = bookings.filter((b) => b.booking_date < today);
+
+  // Statistiques
+  const stats = {
+    total: bookings.length,
+    upcoming: upcomingBookings.length,
+    thisWeek: upcomingBookings.filter((b) => {
+      const bookingDate = new Date(b.booking_date);
+      const nextWeek = new Date();
+      nextWeek.setDate(nextWeek.getDate() + 7);
+      return bookingDate <= nextWeek;
+    }).length,
+  };
+
+  // Formatage des dates
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    if (dateString === today.toISOString().split("T")[0]) {
+      return "Today";
+    } else if (dateString === tomorrow.toISOString().split("T")[0]) {
+      return "Tomorrow";
+    } else {
+      return date.toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+    }
+  };
+
+  if (loading) {
+    return (
+      <ProtectedRoute>
+        <div className="min-h-screen flex flex-col">
+          <Header />
+          <main className="flex-1 bg-gray-50">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+              <div className="animate-pulse">
+                <div className="h-8 bg-gray-300 rounded w-1/3 mb-6"></div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="h-24 bg-gray-200 rounded-lg"></div>
+                  ))}
+                </div>
+                <div className="h-96 bg-gray-200 rounded-lg"></div>
+              </div>
+            </div>
+          </main>
+          <Footer />
+        </div>
+      </ProtectedRoute>
+    );
+  }
+
   return (
     <ProtectedRoute>
       <div className="min-h-screen flex flex-col">
         <Header />
-        <main className="flex-1 p-6">
-          <div className="max-w-4xl mx-auto">
-            <h1 className="text-3xl font-bold mb-6">My Reservations</h1>
 
-            <div className="bg-white shadow-lg rounded-lg p-6">
-              <h2 className="text-xl font-semibold mb-4">Upcoming Bookings</h2>
+        <main className="flex-1 bg-gray-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            {/* Header */}
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold text-gray-900">
+                My Reservations 📅
+              </h1>
+              <p className="mt-2 text-gray-600">
+                Manage your desk bookings and view your reservation history.
+              </p>
+            </div>
 
-              <div className="text-center py-8 text-gray-500">
-                <div className="text-4xl mb-4">📅</div>
-                <p className="text-lg">No reservations yet</p>
-                <p className="text-sm">
-                  Book your first desk from the dashboard!
-                </p>
+            {/* Statistiques */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div className="bg-white p-6 rounded-lg shadow-md">
+                <div className="flex items-center">
+                  <div className="p-3 bg-blue-100 rounded-full">
+                    <span className="text-2xl">📊</span>
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-600">
+                      Total Bookings
+                    </p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {stats.total}
+                    </p>
+                  </div>
+                </div>
+              </div>
 
-                <div className="mt-6">
-                  <Link
-                    href="/"
-                    className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded transition-colors inline-block"
-                  >
-                    Go to Dashboard
-                  </Link>
+              <div className="bg-white p-6 rounded-lg shadow-md">
+                <div className="flex items-center">
+                  <div className="p-3 bg-green-100 rounded-full">
+                    <span className="text-2xl">🗓️</span>
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-600">
+                      Upcoming
+                    </p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {stats.upcoming}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-lg shadow-md">
+                <div className="flex items-center">
+                  <div className="p-3 bg-yellow-100 rounded-full">
+                    <span className="text-2xl">⏰</span>
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-600">
+                      This Week
+                    </p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {stats.thisWeek}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="mt-8 bg-white shadow-lg rounded-lg p-6">
-              <h2 className="text-xl font-semibold mb-4">Booking History</h2>
+            {/* Messages */}
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-sm text-red-800">{error}</p>
+                <button
+                  onClick={fetchBookings}
+                  className="mt-2 text-xs text-red-600 hover:text-red-800 underline"
+                >
+                  Try again
+                </button>
+              </div>
+            )}
 
-              <div className="text-center py-8 text-gray-500">
-                <div className="text-4xl mb-4">📊</div>
-                <p className="text-lg">No booking history</p>
-                <p className="text-sm">
-                  Your past reservations will appear here.
-                </p>
+            {successMessage && (
+              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-md">
+                <p className="text-sm text-green-800">{successMessage}</p>
+              </div>
+            )}
+
+            {/* Réservations à venir */}
+            <div className="bg-white rounded-lg shadow-md mb-8">
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-xl font-semibold text-gray-800">
+                    🗓️ Upcoming Reservations ({stats.upcoming})
+                  </h2>
+                  <Link
+                    href="/"
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md transition-colors text-sm"
+                  >
+                    + Book New Desk
+                  </Link>
+                </div>
+              </div>
+
+              <div className="p-6">
+                {upcomingBookings.length === 0 ? (
+                  <div className="text-center py-12 text-gray-500">
+                    <div className="text-6xl mb-4">🪑</div>
+                    <h3 className="text-lg font-medium mb-2">
+                      No upcoming reservations
+                    </h3>
+                    <p className="text-sm mb-6">
+                      Book your next desk to get started!
+                    </p>
+                    <Link
+                      href="/"
+                      className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-md transition-colors"
+                    >
+                      Book a Desk
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {upcomingBookings.map((booking) => (
+                      <div
+                        key={booking.id}
+                        className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
+                      >
+                        <div className="flex items-center space-x-4">
+                          <div className="p-2 bg-blue-100 rounded-full">
+                            <span className="text-lg">🪑</span>
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-gray-900">
+                              Desk {booking.desks.name}
+                            </h4>
+                            <p className="text-sm text-gray-600">
+                              {booking.desks.location} •{" "}
+                              {formatDate(booking.booking_date)}
+                            </p>
+                            {booking.notes && (
+                              <p className="text-xs text-gray-500 mt-1">
+                                Note: {booking.notes}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-xs text-gray-500">
+                            Booked{" "}
+                            {new Date(booking.created_at).toLocaleDateString()}
+                          </span>
+                          <button
+                            onClick={() =>
+                              handleCancelBooking(
+                                booking.id,
+                                booking.desks.name
+                              )
+                            }
+                            disabled={actionLoading === booking.id}
+                            className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition-colors disabled:opacity-50"
+                          >
+                            {actionLoading === booking.id
+                              ? "Cancelling..."
+                              : "Cancel"}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
+
+            {/* Historique */}
+            {pastBookings.length > 0 && (
+              <div className="bg-white rounded-lg shadow-md">
+                <div className="p-6 border-b border-gray-200">
+                  <h2 className="text-xl font-semibold text-gray-800">
+                    📊 Booking History ({pastBookings.length})
+                  </h2>
+                </div>
+
+                <div className="p-6">
+                  <div className="space-y-3">
+                    {pastBookings.slice(0, 10).map((booking) => (
+                      <div
+                        key={booking.id}
+                        className="flex items-center justify-between p-3 border border-gray-100 rounded-lg bg-gray-50"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div className="p-2 bg-gray-200 rounded-full">
+                            <span className="text-sm">🪑</span>
+                          </div>
+                          <div>
+                            <h5 className="font-medium text-gray-700">
+                              Desk {booking.desks.name}
+                            </h5>
+                            <p className="text-sm text-gray-500">
+                              {booking.desks.location} •{" "}
+                              {formatDate(booking.booking_date)}
+                            </p>
+                          </div>
+                        </div>
+                        <span className="text-xs text-gray-400">
+                          ✅ Completed
+                        </span>
+                      </div>
+                    ))}
+
+                    {pastBookings.length > 10 && (
+                      <p className="text-center text-sm text-gray-500 pt-4">
+                        ... and {pastBookings.length - 10} more past bookings
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </main>
         <Footer />
