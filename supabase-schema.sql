@@ -70,6 +70,9 @@ CREATE POLICY "Users can view own profile" ON public.users
 CREATE POLICY "Users can update own profile" ON public.users
     FOR UPDATE USING (auth.uid() = id);
 
+CREATE POLICY "Users can create own profile" ON public.users
+    FOR INSERT WITH CHECK (auth.uid() = id);
+
 -- Everyone can view available desks
 CREATE POLICY "Anyone can view desks" ON public.desks
     FOR SELECT USING (true);
