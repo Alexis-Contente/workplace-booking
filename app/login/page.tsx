@@ -4,6 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import Header from "../components/header";
 import Footer from "../components/footer";
+import {
+  signUpWithCompanyEmail,
+  signInWithEmail,
+  validatePassword,
+  validateCompanyEmail,
+} from "../../lib/auth-helpers";
 
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -11,21 +17,105 @@ export default function LoginPage() {
     email: "",
     password: "",
     confirmPassword: "",
-    name: "",
+    firstName: "",
+    lastName: "",
   });
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [errors, setErrors] = useState<string[]>([]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     });
+    // Clear errors when user starts typing
+    if (errors.length > 0) {
+      setErrors([]);
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement authentication logic
-    console.log("Form submitted:", formData);
-    alert(`${isLogin ? "Login" : "Registration"} simulated!`);
+    setLoading(true);
+    setMessage("");
+    setErrors([]);
+
+    try {
+      if (isLogin) {
+        // Mode connexion
+        const { error } = await signInWithEmail(
+          formData.email,
+          formData.password
+        );
+
+        if (error) {
+          setErrors([error.message]);
+        } else {
+          setMessage("✅ Login successful! Redirecting...");
+          // TODO: Rediriger vers le dashboard
+          setTimeout(() => {
+            window.location.href = "/";
+          }, 1500);
+        }
+      } else {
+        // Mode inscription
+        const validationErrors: string[] = [];
+
+        // Validation email
+        if (!validateCompanyEmail(formData.email)) {
+          validationErrors.push(
+            "Please use your @quant-cube.com email address"
+          );
+        }
+
+        // Validation mot de passe
+        const passwordValidation = validatePassword(formData.password);
+        if (!passwordValidation.isValid) {
+          validationErrors.push(...passwordValidation.errors);
+        }
+
+        // Validation confirmation mot de passe
+        if (formData.password !== formData.confirmPassword) {
+          validationErrors.push("Passwords do not match");
+        }
+
+        // Validation champs requis
+        if (!formData.firstName.trim()) {
+          validationErrors.push("First name is required");
+        }
+        if (!formData.lastName.trim()) {
+          validationErrors.push("Last name is required");
+        }
+
+        if (validationErrors.length > 0) {
+          setErrors(validationErrors);
+          setLoading(false);
+          return;
+        }
+
+        // Inscription
+        const { error } = await signUpWithCompanyEmail(
+          formData.email,
+          formData.password,
+          formData.firstName.trim(),
+          formData.lastName.trim()
+        );
+
+        if (error) {
+          setErrors([error.message]);
+        } else {
+          setMessage(
+            "✅ Account created! Please check your email to confirm your account."
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Authentication error:", error);
+      setErrors(["An unexpected error occurred. Please try again."]);
+    }
+
+    setLoading(false);
   };
 
   return (
@@ -40,7 +130,9 @@ export default function LoginPage() {
                 {isLogin ? "Login" : "Sign Up"}
               </h1>
               <p className="text-gray-600">
-                {isLogin ? "Sign in to your account" : "Create your account"}
+                {isLogin
+                  ? "Sign in to your account"
+                  : "Create your Quant Cube account"}
               </p>
             </div>
 
@@ -48,7 +140,11 @@ export default function LoginPage() {
             <div className="flex mb-6 bg-gray-100 rounded-lg p-1">
               <button
                 type="button"
-                onClick={() => setIsLogin(true)}
+                onClick={() => {
+                  setIsLogin(true);
+                  setErrors([]);
+                  setMessage("");
+                }}
                 className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
                   isLogin
                     ? "bg-blue-500 text-white"
@@ -59,7 +155,11 @@ export default function LoginPage() {
               </button>
               <button
                 type="button"
-                onClick={() => setIsLogin(false)}
+                onClick={() => {
+                  setIsLogin(false);
+                  setErrors([]);
+                  setMessage("");
+                }}
                 className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
                   !isLogin
                     ? "bg-blue-500 text-white"
@@ -70,27 +170,66 @@ export default function LoginPage() {
               </button>
             </div>
 
+            {/* Messages */}
+            {message && (
+              <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
+                <p className="text-sm text-green-800">{message}</p>
+              </div>
+            )}
+
+            {errors.length > 0 && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                {errors.map((error, index) => (
+                  <p key={index} className="text-sm text-red-800 mb-1">
+                    • {error}
+                  </p>
+                ))}
+              </div>
+            )}
+
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
               {!isLogin && (
-                <div>
-                  <label
-                    htmlFor="name"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Full Name
-                  </label>
-                  <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    required={!isLogin}
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Your full name"
-                  />
-                </div>
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label
+                        htmlFor="firstName"
+                        className="block text-sm font-medium text-gray-700 mb-1"
+                      >
+                        First Name *
+                      </label>
+                      <input
+                        type="text"
+                        id="firstName"
+                        name="firstName"
+                        required={!isLogin}
+                        value={formData.firstName}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="John"
+                      />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="lastName"
+                        className="block text-sm font-medium text-gray-700 mb-1"
+                      >
+                        Last Name *
+                      </label>
+                      <input
+                        type="text"
+                        id="lastName"
+                        name="lastName"
+                        required={!isLogin}
+                        value={formData.lastName}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Doe"
+                      />
+                    </div>
+                  </div>
+                </>
               )}
 
               <div>
@@ -98,7 +237,7 @@ export default function LoginPage() {
                   htmlFor="email"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Email
+                  Email *
                 </label>
                 <input
                   type="email"
@@ -108,7 +247,7 @@ export default function LoginPage() {
                   value={formData.email}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="your.email@company.com"
+                  placeholder="john.doe@quant-cube.com"
                 />
               </div>
 
@@ -117,7 +256,7 @@ export default function LoginPage() {
                   htmlFor="password"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Password
+                  Password *
                 </label>
                 <input
                   type="password"
@@ -127,8 +266,13 @@ export default function LoginPage() {
                   value={formData.password}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="••••••••"
+                  placeholder="••••••••••••••"
                 />
+                {!isLogin && (
+                  <p className="mt-1 text-xs text-gray-500">
+                    Min 14 characters, 2 numbers, 1 special character
+                  </p>
+                )}
               </div>
 
               {!isLogin && (
@@ -137,7 +281,7 @@ export default function LoginPage() {
                     htmlFor="confirmPassword"
                     className="block text-sm font-medium text-gray-700 mb-1"
                   >
-                    Confirm Password
+                    Confirm Password *
                   </label>
                   <input
                     type="password"
@@ -147,16 +291,27 @@ export default function LoginPage() {
                     value={formData.confirmPassword}
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="••••••••"
+                    placeholder="••••••••••••••"
                   />
                 </div>
               )}
 
               <button
                 type="submit"
-                className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-4 rounded-md transition-colors duration-200 mt-6"
+                disabled={loading}
+                className={`w-full font-medium py-3 px-4 rounded-md transition-colors duration-200 mt-6 ${
+                  loading
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-blue-500 hover:bg-blue-600"
+                } text-white`}
               >
-                {isLogin ? "Sign In" : "Sign Up"}
+                {loading
+                  ? isLogin
+                    ? "Signing in..."
+                    : "Creating account..."
+                  : isLogin
+                  ? "Sign In"
+                  : "Create Account"}
               </button>
             </form>
 
