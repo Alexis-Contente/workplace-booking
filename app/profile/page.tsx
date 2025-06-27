@@ -1,27 +1,20 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { useAuth } from "../../hooks/useAuth";
+import { useUserProfile } from "../../hooks/useUserProfile";
 import { supabase } from "../../lib/supabase";
-import { getUserBookings } from "../../lib/desk-helpers";
 import ProtectedRoute from "../../components/ProtectedRoute";
 import Header from "../components/header";
 import Footer from "../components/footer";
+import Link from "next/link";
 
-interface UserProfile {
-  id: string;
-  email: string;
-  name: string;
-  created_at: string;
-}
-
-export default function ProfilePage() {
+export default function Profile() {
   const { user } = useAuth();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { profile, loading: profileLoading, updateProfile } = useUserProfile();
   const [editing, setEditing] = useState(false);
-  const [editName, setEditName] = useState("");
+  const [editFirstName, setEditFirstName] = useState("");
+  const [editLastName, setEditLastName] = useState("");
   const [saveLoading, setSaveLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -31,90 +24,66 @@ export default function ProfilePage() {
     lastLogin: "",
   });
 
-  // Récupérer le profil utilisateur
-  const fetchProfile = async () => {
+  // Récupérer les statistiques de réservation
+  const fetchBookingStats = async () => {
     if (!user) return;
 
-    setLoading(true);
-    setError(null);
-
     try {
-      // Récupérer le profil depuis la table users
-      const { data: profileData, error: profileError } = await supabase
-        .from("users")
-        .select("*")
-        .eq("id", user.id)
-        .single();
+      // Total bookings
+      const { count: totalCount } = await supabase
+        .from("bookings")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id);
 
-      if (profileError && profileError.code === "PGRST116") {
-        // Si l'utilisateur n'existe pas dans la table users, le créer
-        const { data: newProfile, error: createError } = await supabase
-          .from("users")
-          .insert({
-            id: user.id,
-            email: user.email!,
-            name: user.user_metadata?.name || user.email!.split("@")[0],
-          })
-          .select("*")
-          .single();
-
-        if (createError) {
-          setError("Failed to create user profile");
-          return;
-        }
-        setProfile(newProfile);
-        setEditName(newProfile.name);
-      } else if (profileError) {
-        setError("Failed to load profile");
-        return;
-      } else if (profileData) {
-        setProfile(profileData);
-        setEditName(profileData.name);
-      }
-
-      // Récupérer les statistiques de réservation
-      const { bookings } = await getUserBookings(user.id, 100);
-      const now = new Date();
-      const thisMonth = bookings.filter((b) => {
-        const bookingDate = new Date(b.booking_date);
-        return (
-          bookingDate.getMonth() === now.getMonth() &&
-          bookingDate.getFullYear() === now.getFullYear()
-        );
-      });
+      // Monthly bookings (current month)
+      const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+      const { count: monthlyCount } = await supabase
+        .from("bookings")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .gte("booking_date", `${currentMonth}-01`)
+        .lt("booking_date", `${currentMonth}-32`);
 
       setBookingStats({
-        total: bookings.length,
-        thisMonth: thisMonth.length,
+        total: totalCount || 0,
+        thisMonth: monthlyCount || 0,
         lastLogin: user.last_sign_in_at
           ? new Date(user.last_sign_in_at).toLocaleDateString()
           : "Today",
       });
     } catch (err) {
-      setError("An unexpected error occurred");
-      console.error("Profile fetch error:", err);
-    } finally {
-      setLoading(false);
+      console.error("Error fetching booking stats:", err);
     }
   };
 
   // Sauvegarder les modifications
   const handleSave = async () => {
-    if (!profile || !editName.trim()) return;
+    if (!profile || (!editFirstName.trim() && !editLastName.trim())) return;
 
     setSaveLoading(true);
     setError(null);
 
     try {
+      const firstName = editFirstName.trim() || profile.first_name || "";
+      const lastName = editLastName.trim() || profile.last_name || "";
+
       const { error: updateError } = await supabase
         .from("users")
-        .update({ name: editName.trim() })
+        .update({
+          first_name: firstName,
+          last_name: lastName,
+        })
         .eq("id", profile.id);
 
       if (updateError) {
         setError("Failed to update profile");
       } else {
-        setProfile({ ...profile, name: editName.trim() });
+        const updatedProfile = {
+          ...profile,
+          first_name: firstName,
+          last_name: lastName,
+        };
+        updateProfile(updatedProfile);
         setEditing(false);
         setSuccessMessage("Profile updated successfully! ✅");
         setTimeout(() => setSuccessMessage(null), 3000);
@@ -129,49 +98,73 @@ export default function ProfilePage() {
 
   // Annuler les modifications
   const handleCancel = () => {
-    setEditName(profile?.name || "");
+    setEditFirstName(profile?.first_name || "");
+    setEditLastName(profile?.last_name || "");
     setEditing(false);
     setError(null);
   };
 
+  // Initialiser les noms d'édition quand le profil est chargé
   useEffect(() => {
-    fetchProfile();
+    if (profile && !editing) {
+      setEditFirstName(profile.first_name || "");
+      setEditLastName(profile.last_name || "");
+    }
+  }, [profile, editing]);
+
+  // Récupérer les stats quand l'utilisateur est chargé
+  useEffect(() => {
+    if (user) {
+      fetchBookingStats();
+    }
   }, [user]);
 
-  if (loading) {
+  if (profileLoading) {
     return (
       <ProtectedRoute>
-        <div className="min-h-screen flex flex-col">
-          <Header />
-          <main className="flex-1 bg-gray-50">
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-              <div className="animate-pulse">
-                <div className="h-8 bg-gray-300 rounded w-1/3 mb-6"></div>
-                <div className="bg-gray-200 rounded-lg h-64"></div>
-              </div>
-            </div>
-          </main>
-          <Footer />
+        <Header />
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading profile...</p>
+          </div>
         </div>
+        <Footer />
+      </ProtectedRoute>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <ProtectedRoute>
+        <Header />
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-red-600 mb-4">Error loading profile</p>
+            <Link href="/" className="text-blue-500 hover:underline">
+              Back to Dashboard
+            </Link>
+          </div>
+        </div>
+        <Footer />
       </ProtectedRoute>
     );
   }
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen flex flex-col">
-        <Header />
-
-        <main className="flex-1 bg-gray-50">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <Header />
+      <div className="min-h-screen bg-gray-50">
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-6xl mx-auto">
             {/* Header */}
-            <div className="mb-8">
-              <h1 className="text-3xl font-bold text-gray-900">
-                User Profile 👤
+            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+              <h1 className="text-3xl font-bold text-gray-800 mb-2">
+                My Profile
               </h1>
-              <p className="mt-2 text-gray-600">
-                Manage your personal information and view your account
-                statistics.
+              <p className="text-gray-600">
+                Manage your personal information and view your booking
+                statistics
               </p>
             </div>
 
@@ -217,7 +210,7 @@ export default function ProfilePage() {
                       <div className="flex items-center space-x-2">
                         <span className="text-lg">📧</span>
                         <p className="text-gray-900 bg-gray-50 px-3 py-2 rounded-md flex-1">
-                          {profile?.email}
+                          {profile.email}
                         </p>
                         <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">
                           Verified
@@ -228,24 +221,47 @@ export default function ProfilePage() {
                       </p>
                     </div>
 
-                    {/* Nom */}
+                    {/* First Name */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Display Name
+                        First Name
                       </label>
                       <div className="flex items-center space-x-2">
                         <span className="text-lg">👤</span>
                         {editing ? (
                           <input
                             type="text"
-                            value={editName}
-                            onChange={(e) => setEditName(e.target.value)}
+                            value={editFirstName}
+                            onChange={(e) => setEditFirstName(e.target.value)}
                             className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Enter your display name"
+                            placeholder="Enter your first name"
                           />
                         ) : (
                           <p className="text-gray-900 bg-gray-50 px-3 py-2 rounded-md flex-1">
-                            {profile?.name}
+                            {profile.first_name || "Not set"}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Last Name */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Last Name
+                      </label>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-lg">👥</span>
+                        {editing ? (
+                          <input
+                            type="text"
+                            value={editLastName}
+                            onChange={(e) => setEditLastName(e.target.value)}
+                            className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Enter your last name"
+                          />
+                        ) : (
+                          <p className="text-gray-900 bg-gray-50 px-3 py-2 rounded-md flex-1">
+                            {profile.last_name || "Not set"}
                           </p>
                         )}
                       </div>
@@ -259,7 +275,7 @@ export default function ProfilePage() {
                       <div className="flex items-center space-x-2">
                         <span className="text-lg">📅</span>
                         <p className="text-gray-900 bg-gray-50 px-3 py-2 rounded-md flex-1">
-                          {profile?.created_at
+                          {profile.created_at
                             ? new Date(profile.created_at).toLocaleDateString(
                                 "en-US",
                                 {
@@ -278,7 +294,7 @@ export default function ProfilePage() {
                       <div className="flex space-x-3 pt-4 border-t border-gray-200">
                         <button
                           onClick={handleSave}
-                          disabled={saveLoading || !editName.trim()}
+                          disabled={saveLoading}
                           className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md text-sm transition-colors disabled:opacity-50"
                         >
                           {saveLoading ? "Saving..." : "Save Changes"}
@@ -378,10 +394,9 @@ export default function ProfilePage() {
               </div>
             </div>
           </div>
-        </main>
-
-        <Footer />
+        </div>
       </div>
+      <Footer />
     </ProtectedRoute>
   );
 }

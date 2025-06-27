@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { useAuth } from "../../hooks/useAuth";
+import { useUserProfile } from "../../hooks/useUserProfile";
 import { signOut } from "../../lib/auth-helpers";
 
 export default function Header() {
-  const { user, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
+  const { getFullName } = useUserProfile();
 
   const handleLogout = async () => {
     const { error } = await signOut();
@@ -42,7 +44,7 @@ export default function Header() {
                 </button>
               </Link>
               <div className="text-white text-sm">
-                Welcome, {user?.user_metadata?.full_name || user?.email}!
+                Welcome, {getFullName() || "User"}!
               </div>
               <button
                 onClick={handleLogout}

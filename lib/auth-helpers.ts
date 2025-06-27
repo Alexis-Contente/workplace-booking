@@ -79,7 +79,8 @@ export async function signUpWithCompanyEmail(
     const { error: insertError } = await supabase.from("users").insert({
       id: data.user.id,
       email: email,
-      name: `${firstName} ${lastName}`,
+      first_name: firstName,
+      last_name: lastName,
     });
 
     if (insertError) {

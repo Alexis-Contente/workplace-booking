@@ -110,7 +110,9 @@ function DeskButton({
           <span className="text-xs opacity-75">Booking...</span>
         )}
         {desk.status === "booked" && desk.booking?.users && (
-          <span className="text-xs opacity-75">{desk.booking.users.name}</span>
+          <span className="text-xs opacity-75">
+            {`${desk.booking.users.first_name} ${desk.booking.users.last_name}`.trim()}
+          </span>
         )}
       </div>
     </button>

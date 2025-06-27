@@ -22,7 +22,8 @@ export interface Booking {
   updated_at: string;
   // Relations
   users?: {
-    name: string;
+    first_name: string;
+    last_name: string;
     email: string;
   };
   desks?: {
@@ -72,7 +73,8 @@ async function ensureUserProfile(): Promise<{
   const { error: insertError } = await supabase.from("users").insert({
     id: user.id,
     email: user.email!,
-    name: user.user_metadata?.name || user.email!.split("@")[0],
+    first_name: user.user_metadata?.first_name || user.email!.split("@")[0],
+    last_name: user.user_metadata?.last_name || "",
   });
 
   return { success: !insertError, error: insertError };
@@ -101,7 +103,7 @@ export async function getBookingsForDate(
     .select(
       `
       *,
-      users:user_id (name, email),
+      users:user_id (first_name, last_name, email),
       desks:desk_id (name)
     `
     )
