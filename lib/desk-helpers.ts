@@ -187,6 +187,30 @@ export async function createBooking(
     };
   }
 
+  // Vérifier si l'utilisateur a déjà une réservation pour cette date
+  const { data: existingBooking, error: checkError } = await supabase
+    .from("bookings")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("booking_date", date)
+    .eq("status", "active")
+    .limit(1);
+
+  if (checkError) {
+    return { booking: null, error: checkError };
+  }
+
+  if (existingBooking && existingBooking.length > 0) {
+    return {
+      booking: null,
+      error: {
+        message:
+          "You already have a booking for this date. Only one booking per day is allowed.",
+        code: "USER_BOOKING_LIMIT_EXCEEDED",
+      } as PostgrestError,
+    };
+  }
+
   const { data: booking, error } = await supabase
     .from("bookings")
     .insert({

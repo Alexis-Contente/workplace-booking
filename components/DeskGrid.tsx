@@ -191,7 +191,11 @@ export default function DeskGrid({
         const errorMessage =
           bookError.message || bookError.toString() || "Unknown error";
 
-        if (
+        if (bookError.code === "USER_BOOKING_LIMIT_EXCEEDED") {
+          setError(
+            "You already have a booking for this date. Only one booking per day is allowed."
+          );
+        } else if (
           errorMessage.includes("duplicate key") ||
           errorMessage.includes("unique constraint") ||
           errorMessage.includes("bookings_desk_id_booking_date_key")
