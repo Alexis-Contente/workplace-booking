@@ -8,16 +8,17 @@ import DateSelector from "../components/DateSelector";
 import DeskGrid from "../components/DeskGrid";
 
 export default function Home() {
-  // État pour la date sélectionnée (par défaut aujourd'hui)
+  // State for the selected date
   const [selectedDate, setSelectedDate] = useState(() => {
-    // Date d'aujourd'hui par défaut
-    const today = new Date();
-    return today.toISOString().split("T")[0];
+    // Default date is tomorrow
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow.toISOString().split("T")[0];
   });
 
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // Callback pour rafraîchir les données quand une réservation change
+  // Callback to refresh data when a booking changes
   const handleBookingChange = () => {
     setRefreshKey((prev) => prev + 1);
   };
@@ -32,7 +33,7 @@ export default function Home() {
             {/* Header */}
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-gray-900">
-                Welcome to Quant Cube Workplace Booking! 🏢
+                Welcome to QuantCube Workplace Booking! 🏢
               </h1>
               <p className="mt-2 text-gray-600">
                 Book your desk for productive work in our open office
@@ -40,7 +41,7 @@ export default function Home() {
               </p>
             </div>
 
-            {/* Quick stats or notifications could go here */}
+            {/* Tip section */}
             <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <div className="flex items-center">
                 <span className="text-blue-500 text-xl mr-3">💡</span>
@@ -62,7 +63,7 @@ export default function Home() {
               />
             </div>
 
-            {/* Desk Grid - The main feature */}
+            {/* Desk Grid */}
             <div key={refreshKey}>
               <DeskGrid
                 selectedDate={selectedDate}
