@@ -325,14 +325,6 @@ export default function LoginPage() {
               </Link>
             </div>
           </div>
-
-          {/* Development note */}
-          <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-            <p className="text-sm text-yellow-800">
-              <strong>Note:</strong> This page is under development.
-              Authentication is not yet functional.
-            </p>
-          </div>
         </div>
       </main>
       <Footer />
