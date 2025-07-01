@@ -288,6 +288,13 @@ export default function DeskGrid({
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
+      {/* Tip section */}
+      <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <p className="text-sm text-blue-800">
+          💡 <strong>Tip :</strong> Click on available desks (green) to book
+          them, or click on your bookings (blue) to cancel them.
+        </p>
+      </div>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-semibold text-gray-800">
           🪑 Desk Availability for {selectedDate}
