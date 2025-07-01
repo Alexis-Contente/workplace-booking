@@ -9,20 +9,21 @@ import {
 } from "../lib/desk-helpers";
 import type { DeskWithStatus } from "../lib/desk-helpers";
 
-interface DeskGridProps {
+// TYPES
+type DeskGridProps = {
   selectedDate: string;
-  onBookingChange?: () => void; // Callback pour rafraîchir les données
-}
+  onBookingChange?: () => void; // Callback to refresh data when a booking changes
+};
 
-interface DeskButtonProps {
-  desk: DeskWithStatus;
-  onBook: (deskId: string) => void;
-  onCancel: (bookingId: string) => void;
-  isLoading: boolean;
-  isBookingInProgress: boolean; // Nouveau: état de réservation en cours
-}
+type DeskButtonProps = {
+  desk: DeskWithStatus; // Desk with status
+  onBook: (deskId: string) => void; // Function to book a desk
+  onCancel: (bookingId: string) => void; // Function to cancel a booking
+  isLoading: boolean; // Loading state
+  isBookingInProgress: boolean; // Booking in progress state
+};
 
-// Composant pour un bureau individuel
+// Desk button component
 function DeskButton({
   desk,
   onBook,
@@ -31,41 +32,42 @@ function DeskButton({
   isBookingInProgress,
 }: DeskButtonProps) {
   const getStatusStyle = () => {
-    // Si réservation en cours, afficher en bleu (optimistic UI)
+    // If booking in progress, display in blue
     if (isBookingInProgress && desk.status === "available") {
       return "bg-blue-100 border-blue-300 text-blue-800 animate-pulse";
     }
 
     switch (desk.status) {
       case "available":
-        return "bg-green-100 border-green-300 text-green-800 hover:bg-green-200";
+        return "bg-green-100 border-green-300 text-green-800 hover:bg-green-200"; // Available desk
       case "booked":
-        return "bg-red-100 border-red-300 text-red-800 cursor-not-allowed";
+        return "bg-red-100 border-red-300 text-red-800 cursor-not-allowed"; // Booked desk
       case "my_booking":
-        return "bg-blue-100 border-blue-300 text-blue-800 hover:bg-blue-200";
+        return "bg-blue-100 border-blue-300 text-blue-800 hover:bg-blue-200"; // My booking
       default:
-        return "bg-gray-100 border-gray-300 text-gray-800";
+        return "bg-gray-100 border-gray-300 text-gray-800"; // Default
     }
   };
 
   const getStatusIcon = () => {
-    // Si réservation en cours, afficher l'icône de réservation
+    // If booking in progress, display the booking icon
     if (isBookingInProgress && desk.status === "available") {
       return "⏳";
     }
 
     switch (desk.status) {
       case "available":
-        return "✅";
+        return "✅"; // Available desk
       case "booked":
-        return "❌";
+        return "❌"; // Booked desk
       case "my_booking":
-        return "💙";
+        return "💙"; // My booking
       default:
-        return "❓";
+        return "❓"; // Default
     }
   };
 
+  // Function to handle desk click
   const handleClick = () => {
     if (isLoading || isBookingInProgress) return;
 
@@ -76,6 +78,7 @@ function DeskButton({
     }
   };
 
+  // Function to check if the desk is clickable
   const isClickable =
     desk.status === "available" || desk.status === "my_booking";
 
@@ -124,16 +127,18 @@ export default function DeskGrid({
   onBookingChange,
 }: DeskGridProps) {
   const { user } = useAuth();
+
+  // States
   const [desks, setDesks] = useState<DeskWithStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [bookingInProgress, setBookingInProgress] = useState<string | null>(
     null
-  ); // ID du bureau en cours de réservation
+  ); // ID of the desk in progress
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // Récupérer les bureaux et leur statut
+  // Fetch desks and their status
   const fetchDesks = async () => {
     setLoading(true);
     setError(null);
@@ -156,15 +161,15 @@ export default function DeskGrid({
     }
   };
 
-  // Réserver un bureau
+  // Book a desk
   const handleBookDesk = async (deskId: string) => {
     setActionLoading(true);
-    setBookingInProgress(deskId); // Marquer ce bureau comme en cours de réservation
-    setError(null); // Réinitialiser les erreurs
-    setSuccessMessage(null); // Réinitialiser les messages de succès
+    setBookingInProgress(deskId); // Mark the desk as in progress
+    setError(null); // Reset errors
+    setSuccessMessage(null); // Reset success messages
 
     try {
-      // Vérification de dernière minute : le bureau est-il toujours libre ?
+      // Last minute check: is the desk still available?
       const { desks: currentDesks, error: checkError } =
         await getDesksWithStatus(selectedDate, user?.id);
 
@@ -180,17 +185,18 @@ export default function DeskGrid({
         return;
       }
 
-      // Procéder à la réservation
+      // Proceed to the booking
       const { booking, error: bookError } = await createBooking(
         deskId,
         selectedDate
       );
 
       if (bookError) {
-        // Gestion spécifique des conflits de réservation
+        // Specific booking conflict management
         const errorMessage =
           bookError.message || bookError.toString() || "Unknown error";
 
+        // Can't book more than one desk per day
         if (bookError.code === "USER_BOOKING_LIMIT_EXCEEDED") {
           setError(
             "You already have a booking for this date. Only one booking per day is allowed."
@@ -203,18 +209,18 @@ export default function DeskGrid({
           setError(
             "This desk was just booked by someone else! Refreshing availability..."
           );
-          // Rafraîchir immédiatement les données pour voir le nouveau statut
+          // Refresh immediately to see the new status
           await fetchDesks();
         } else {
           setError("Failed to book desk: " + errorMessage);
         }
       } else if (booking) {
-        // Succès - rafraîchir les données
+        // Success - refresh the data
         await fetchDesks();
         onBookingChange?.();
-        // Message de succès temporaire
+        // Temporary success message
         setSuccessMessage(`Desk ${targetDesk.name} booked successfully! 🎉`);
-        // Effacer le message de succès après 3 secondes
+        // Clear the success message after 3 seconds
         setTimeout(() => setSuccessMessage(null), 3000);
       }
     } catch (err) {
@@ -222,11 +228,11 @@ export default function DeskGrid({
       console.error("Unexpected booking error:", err);
     } finally {
       setActionLoading(false);
-      setBookingInProgress(null); // Réinitialiser l'état
+      setBookingInProgress(null); // Reset the state
     }
   };
 
-  // Annuler une réservation
+  // Cancel a booking
   const handleCancelBooking = async (bookingId: string) => {
     setActionLoading(true);
     setError(null);
@@ -239,10 +245,10 @@ export default function DeskGrid({
         setError("Failed to cancel booking");
         console.error("Cancel error:", cancelError);
       } else {
-        // Rafraîchir les données
+        // Refresh the data
         await fetchDesks();
         onBookingChange?.();
-        // Message de succès
+        // Success message
         setSuccessMessage("Booking cancelled successfully! ✅");
         setTimeout(() => setSuccessMessage(null), 3000);
       }
@@ -254,12 +260,12 @@ export default function DeskGrid({
     }
   };
 
-  // Recharger quand la date change
+  // Reload when the date changes
   useEffect(() => {
     fetchDesks();
   }, [selectedDate, user?.id]);
 
-  // Séparer les bureaux par zone
+  // Separate desks by zone
   const zoneADesks = desks.filter((desk) => desk.location.includes("Zone A"));
   const zoneBDesks = desks.filter((desk) => desk.location.includes("Zone B"));
 
@@ -300,7 +306,7 @@ export default function DeskGrid({
           🪑 Desk Availability for {selectedDate}
         </h2>
 
-        {/* Statistiques */}
+        {/* Statistics */}
         <div className="flex gap-4 text-sm">
           <span className="text-green-600">
             ✅ Available: {stats.available}
@@ -370,7 +376,7 @@ export default function DeskGrid({
         </div>
       </div>
 
-      {/* Légende */}
+      {/* Legend */}
       <div className="mt-6 p-4 bg-gray-50 rounded-md">
         <h4 className="font-medium text-gray-700 mb-2">Legend:</h4>
         <div className="flex flex-wrap gap-4 text-sm">
