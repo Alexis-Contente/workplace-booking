@@ -41,20 +41,6 @@ export default function Home() {
               </p>
             </div>
 
-            {/* Tip section */}
-            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="flex items-center">
-                <span className="text-blue-500 text-xl mr-3">💡</span>
-                <div>
-                  <p className="text-blue-800 font-medium">Tip:</p>
-                  <p className="text-blue-700 text-sm">
-                    Click on available desks (green) to book them, or click on
-                    your bookings (blue) to cancel them.
-                  </p>
-                </div>
-              </div>
-            </div>
-
             {/* Date Selector */}
             <div className="mb-8">
               <DateSelector
