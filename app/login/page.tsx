@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import Header from "../components/header";
 import Footer from "../components/footer";
 import {
@@ -12,6 +11,7 @@ import {
 } from "../../lib/auth-helpers";
 
 export default function LoginPage() {
+  // States
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
     email: "",
@@ -24,6 +24,8 @@ export default function LoginPage() {
   const [message, setMessage] = useState("");
   const [errors, setErrors] = useState<string[]>([]);
 
+  // FUNCTIONS
+  // Functions to handle input changes
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
@@ -35,6 +37,16 @@ export default function LoginPage() {
     }
   };
 
+  // Function to check password criteria in real time
+  const getPasswordCriteria = (password: string) => {
+    return {
+      length: password.length >= 14, // Check if password is at least 14 characters long
+      numbers: (password.match(/\d/g) || []).length >= 2, // Check if password has at least 2 numbers
+      special: /[!@#$%^&*(),.?":{}|<>]/.test(password), // Check if password has at least 1 special character
+    };
+  };
+
+  // Function to handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -43,7 +55,7 @@ export default function LoginPage() {
 
     try {
       if (isLogin) {
-        // Mode connexion
+        // Login mode
         const { error } = await signInWithEmail(
           formData.email,
           formData.password
@@ -53,34 +65,34 @@ export default function LoginPage() {
           setErrors([error.message]);
         } else {
           setMessage("✅ Login successful! Redirecting...");
-          // TODO: Rediriger vers le dashboard
+          // Redirect to dashboard
           setTimeout(() => {
             window.location.href = "/";
           }, 1500);
         }
       } else {
-        // Mode inscription
+        // Signup mode
         const validationErrors: string[] = [];
 
-        // Validation email
+        // Email validation
         if (!validateCompanyEmail(formData.email)) {
           validationErrors.push(
             "Please use your @quant-cube.com email address"
           );
         }
 
-        // Validation mot de passe
+        // Password validation
         const passwordValidation = validatePassword(formData.password);
         if (!passwordValidation.isValid) {
           validationErrors.push(...passwordValidation.errors);
         }
 
-        // Validation confirmation mot de passe
+        // Confirm password validation
         if (formData.password !== formData.confirmPassword) {
           validationErrors.push("Passwords do not match");
         }
 
-        // Validation champs requis
+        // Required fields validation
         if (!formData.firstName.trim()) {
           validationErrors.push("First name is required");
         }
@@ -94,7 +106,7 @@ export default function LoginPage() {
           return;
         }
 
-        // Inscription
+        // Signup
         const { error } = await signUpWithCompanyEmail(
           formData.email,
           formData.password,
@@ -132,7 +144,7 @@ export default function LoginPage() {
               <p className="text-gray-600">
                 {isLogin
                   ? "Sign in to your account"
-                  : "Create your Quant Cube account"}
+                  : "Create your QuantCube account"}
               </p>
             </div>
 
@@ -269,9 +281,47 @@ export default function LoginPage() {
                   placeholder="••••••••••••••"
                 />
                 {!isLogin && (
-                  <p className="mt-1 text-xs text-gray-500">
-                    Min 14 characters, 2 numbers, 1 special character
-                  </p>
+                  <div className="mt-2 space-y-1">
+                    {(() => {
+                      const criteria = getPasswordCriteria(formData.password);
+                      return (
+                        <div className="text-xs space-y-1">
+                          <div
+                            className={`flex items-center gap-2 ${
+                              criteria.length
+                                ? "text-green-600"
+                                : "text-red-500"
+                            }`}
+                          >
+                            <span>{criteria.length ? "✅" : "❌"}</span>
+                            <span>At least 14 characters</span>
+                          </div>
+                          <div
+                            className={`flex items-center gap-2 ${
+                              criteria.numbers
+                                ? "text-green-600"
+                                : "text-red-500"
+                            }`}
+                          >
+                            <span>{criteria.numbers ? "✅" : "❌"}</span>
+                            <span>At least 2 numbers</span>
+                          </div>
+                          <div
+                            className={`flex items-center gap-2 ${
+                              criteria.special
+                                ? "text-green-600"
+                                : "text-red-500"
+                            }`}
+                          >
+                            <span>{criteria.special ? "✅" : "❌"}</span>
+                            <span>
+                              At least 1 special character (!@#$%^&*...)
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
                 )}
               </div>
 
@@ -314,16 +364,6 @@ export default function LoginPage() {
                   : "Create Account"}
               </button>
             </form>
-
-            {/* Back link */}
-            <div className="text-center mt-6">
-              <Link
-                href="/"
-                className="text-sm text-blue-500 hover:text-blue-600 transition-colors"
-              >
-                ← Back to Home
-              </Link>
-            </div>
           </div>
         </div>
       </main>
