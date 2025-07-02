@@ -24,7 +24,7 @@ export default function Profile() {
     lastLogin: "",
   });
 
-  // Récupérer les statistiques de réservation
+  // Fetch booking statistics
   const fetchBookingStats = async () => {
     if (!user) return;
 
@@ -56,7 +56,7 @@ export default function Profile() {
     }
   };
 
-  // Sauvegarder les modifications
+  // Save changes
   const handleSave = async () => {
     if (!profile || (!editFirstName.trim() && !editLastName.trim())) return;
 
@@ -96,7 +96,7 @@ export default function Profile() {
     }
   };
 
-  // Annuler les modifications
+  // Cancel changes
   const handleCancel = () => {
     setEditFirstName(profile?.first_name || "");
     setEditLastName(profile?.last_name || "");
@@ -104,7 +104,7 @@ export default function Profile() {
     setError(null);
   };
 
-  // Initialiser les noms d'édition quand le profil est chargé
+  // Initialize edit names when profile is loaded
   useEffect(() => {
     if (profile && !editing) {
       setEditFirstName(profile.first_name || "");
@@ -112,7 +112,7 @@ export default function Profile() {
     }
   }, [profile, editing]);
 
-  // Récupérer les stats quand l'utilisateur est chargé
+  // Fetch stats when user is loaded
   useEffect(() => {
     if (user) {
       fetchBookingStats();
@@ -182,7 +182,7 @@ export default function Profile() {
             )}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Informations principales */}
+              {/* Main information */}
               <div className="lg:col-span-2">
                 <div className="bg-white rounded-lg shadow-md">
                   <div className="p-6 border-b border-gray-200">
@@ -267,7 +267,7 @@ export default function Profile() {
                       </div>
                     </div>
 
-                    {/* Date d'inscription */}
+                    {/* Member since */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Member Since
@@ -289,7 +289,7 @@ export default function Profile() {
                       </div>
                     </div>
 
-                    {/* Boutons d'édition */}
+                    {/* Edit buttons */}
                     {editing && (
                       <div className="flex space-x-3 pt-4 border-t border-gray-200">
                         <button
@@ -311,9 +311,9 @@ export default function Profile() {
                 </div>
               </div>
 
-              {/* Statistiques */}
+              {/* Statistics */}
               <div className="space-y-6">
-                {/* Stats de réservation */}
+                {/* Booking statistics */}
                 <div className="bg-white rounded-lg shadow-md p-6">
                   <h3 className="text-lg font-semibold text-gray-800 mb-4">
                     📊 Booking Statistics
@@ -349,7 +349,7 @@ export default function Profile() {
                   </div>
                 </div>
 
-                {/* Actions rapides */}
+                {/* Quick actions */}
                 <div className="bg-white rounded-lg shadow-md p-6">
                   <h3 className="text-lg font-semibold text-gray-800 mb-4">
                     ⚡ Quick Actions
@@ -372,7 +372,7 @@ export default function Profile() {
                   </div>
                 </div>
 
-                {/* Sécurité */}
+                {/* Security */}
                 <div className="bg-white rounded-lg shadow-md p-6">
                   <h3 className="text-lg font-semibold text-gray-800 mb-4">
                     🔒 Account Security
