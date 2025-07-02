@@ -5,7 +5,7 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// Types pour TypeScript (à adapter selon ton schéma)
+// Types for TypeScript
 export type Database = {
   public: {
     Tables: {
@@ -32,7 +32,6 @@ export type Database = {
           created_at?: string;
         };
       };
-      // Autres tables à ajouter plus tard
     };
   };
 };
