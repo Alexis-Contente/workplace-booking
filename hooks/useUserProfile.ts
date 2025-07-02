@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "./useAuth";
 import { supabase } from "../lib/supabase";
 
+// User profile interface matching the database structure
 interface UserProfile {
   id: string;
   email: string;
@@ -10,6 +11,10 @@ interface UserProfile {
   created_at: string;
 }
 
+/**
+ * Custom hook to manage user profile data
+ * Handles fetching, creating, and updating user profiles from Supabase
+ */
 export function useUserProfile() {
   const { user } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -17,13 +22,14 @@ export function useUserProfile() {
 
   useEffect(() => {
     async function fetchProfile() {
+      // If no authenticated user, stop loading
       if (!user) {
         setLoading(false);
         return;
       }
 
       try {
-        // Récupérer le profil depuis la table users
+        // Fetch user profile from the users table
         const { data: profileData, error: profileError } = await supabase
           .from("users")
           .select("*")
@@ -31,11 +37,13 @@ export function useUserProfile() {
           .single();
 
         if (profileError && profileError.code === "PGRST116") {
-          // Si l'utilisateur n'existe pas, le créer avec first_name et last_name
+          // If user doesn't exist in our users table, create a new profile
+          // Extract first name from email or use metadata
           const firstName =
             user.user_metadata?.first_name || user.email!.split("@")[0];
           const lastName = user.user_metadata?.last_name || "";
 
+          // Create new user profile in database
           const { data: newProfile, error: createError } = await supabase
             .from("users")
             .insert({
@@ -47,32 +55,37 @@ export function useUserProfile() {
             .select("*")
             .single();
 
+          // If profile created successfully, update state
           if (!createError && newProfile) {
             setProfile(newProfile);
           }
         } else if (!profileError && profileData) {
+          // If profile exists and was fetched successfully, update state
           setProfile(profileData);
         }
       } catch (err) {
         console.error("Error fetching profile:", err);
       } finally {
+        // Always set loading to false when done
         setLoading(false);
       }
     }
 
     fetchProfile();
-  }, [user]);
+  }, [user]); // Re-run when user changes
 
+  // Function to update profile state (for optimistic updates)
   const updateProfile = (updatedProfile: UserProfile) => {
     setProfile(updatedProfile);
   };
 
-  // Fonction helper pour obtenir le nom complet
+  // Helper function to get full name from profile
   const getFullName = () => {
     if (!profile) return "";
     return `${profile.first_name} ${profile.last_name}`.trim();
   };
 
+  // Return profile data and utility functions
   return {
     profile,
     loading,
