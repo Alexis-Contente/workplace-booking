@@ -137,6 +137,7 @@ export default function DeskGrid({
   ); // ID of the desk in progress
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [selectedRoom, setSelectedRoom] = useState<"DS" | "OP" | "IT">("DS"); // New state for room selection
 
   // Fetch desks and their status
   const fetchDesks = async () => {
@@ -268,13 +269,291 @@ export default function DeskGrid({
   // Separate desks by zone
   const zoneADesks = desks.filter((desk) => desk.location.includes("Zone A"));
   const zoneBDesks = desks.filter((desk) => desk.location.includes("Zone B"));
+  const zoneCDesks = desks.filter((desk) => desk.location.includes("Zone C"));
+
+  // Room assignments based on zones
+  const dsRoomDesks = zoneADesks; // DS Room = Zone A (A01-A24)
+  const opRoomDesks = zoneBDesks; // OP Room = Zone B (B01-B16)
+  const itRoomDesks = zoneCDesks; // IT Room = Zone C (C01-C14)
+
+  // Get desks for selected room
+  const currentRoomDesks =
+    selectedRoom === "DS"
+      ? dsRoomDesks
+      : selectedRoom === "OP"
+      ? opRoomDesks
+      : itRoomDesks;
 
   // Statistiques
   const stats = {
-    total: desks.length,
-    available: desks.filter((d) => d.status === "available").length,
-    booked: desks.filter((d) => d.status === "booked").length,
-    myBookings: desks.filter((d) => d.status === "my_booking").length,
+    total: currentRoomDesks.length,
+    available: currentRoomDesks.filter((d) => d.status === "available").length,
+    booked: currentRoomDesks.filter((d) => d.status === "booked").length,
+    myBookings: currentRoomDesks.filter((d) => d.status === "my_booking")
+      .length,
+  };
+
+  // Function to render DS Room layout (4 blocks of 3 rows with 2 desks each, landscape orientation)
+  const renderDSRoomLayout = () => {
+    const blocks = [];
+
+    for (let blockIndex = 0; blockIndex < 4; blockIndex++) {
+      const blockDesks = [];
+
+      // Each block has 3 rows of 2 desks (landscape orientation)
+      for (let row = 0; row < 3; row++) {
+        const rowDesks = [];
+        for (let col = 0; col < 2; col++) {
+          // Calculate desk index for landscape layout:
+          // A01,A02,A03 in first column, A04,A05,A06 in second column, etc.
+          const deskIndex = blockIndex * 6 + col * 3 + (2 - row); // (2 - row) for reverse order
+          if (deskIndex < dsRoomDesks.length) {
+            const desk = dsRoomDesks[deskIndex];
+            rowDesks.push(
+              <DeskButton
+                key={desk.id}
+                desk={desk}
+                onBook={handleBookDesk}
+                onCancel={handleCancelBooking}
+                isLoading={actionLoading}
+                isBookingInProgress={bookingInProgress === desk.id}
+              />
+            );
+          }
+        }
+        if (rowDesks.length > 0) {
+          blockDesks.push(
+            <div
+              key={`block-${blockIndex}-row-${row}`}
+              className="flex gap-3 justify-center"
+            >
+              {rowDesks}
+            </div>
+          );
+        }
+      }
+
+      if (blockDesks.length > 0) {
+        blocks.push(
+          <div key={`block-${blockIndex}`} className="flex flex-col gap-2">
+            {blockDesks}
+          </div>
+        );
+      }
+    }
+
+    return <div className="flex flex-wrap gap-8 justify-center">{blocks}</div>;
+  };
+
+  // Function to render OP Room layout (specific layout with top row and side columns)
+  const renderOPRoomLayout = () => {
+    // Create the specific layout structure
+    const topRowDesks: DeskWithStatus[] = []; // B13-B16 (top row)
+    const leftColumnDesks: DeskWithStatus[] = []; // B01-B06 (organized in landscape)
+    const rightColumnDesks: DeskWithStatus[] = []; // B07-B12 (organized in landscape)
+
+    // Map desks to their positions (assuming desks are ordered sequentially)
+    for (let i = 0; i < 16 && i < opRoomDesks.length; i++) {
+      const desk = opRoomDesks[i];
+      if (i >= 12) {
+        // Top row: B13-B16 (last 4 desks)
+        topRowDesks.push(desk);
+      } else if (i < 6) {
+        // Left column: B01-B06 (first 6 desks)
+        leftColumnDesks.push(desk);
+      } else {
+        // Right column: B07-B12 (middle 6 desks)
+        rightColumnDesks.push(desk);
+      }
+    }
+
+    // Render left column in landscape (3 rows x 2 cols)
+    const renderLeftColumn = () => {
+      const rows = [];
+      for (let row = 0; row < 3; row++) {
+        const rowDesks = [];
+        for (let col = 0; col < 2; col++) {
+          const deskIndex = col * 3 + (2 - row); // landscape orientation: reverse row order
+          if (deskIndex < leftColumnDesks.length) {
+            rowDesks.push(
+              <DeskButton
+                key={leftColumnDesks[deskIndex]?.id || `left-${deskIndex}`}
+                desk={leftColumnDesks[deskIndex]}
+                onBook={handleBookDesk}
+                onCancel={handleCancelBooking}
+                isLoading={actionLoading}
+                isBookingInProgress={
+                  bookingInProgress === leftColumnDesks[deskIndex]?.id
+                }
+              />
+            );
+          }
+        }
+        if (rowDesks.length > 0) {
+          rows.push(
+            <div key={`left-row-${row}`} className="flex gap-3">
+              {rowDesks}
+            </div>
+          );
+        }
+      }
+      return <div className="flex flex-col gap-2">{rows}</div>;
+    };
+
+    // Render right column in landscape (3 rows x 2 cols)
+    const renderRightColumn = () => {
+      const rows = [];
+      for (let row = 0; row < 3; row++) {
+        const rowDesks = [];
+        for (let col = 0; col < 2; col++) {
+          const deskIndex = col * 3 + (2 - row); // landscape orientation: reverse row order
+          if (deskIndex < rightColumnDesks.length) {
+            rowDesks.push(
+              <DeskButton
+                key={rightColumnDesks[deskIndex]?.id || `right-${deskIndex}`}
+                desk={rightColumnDesks[deskIndex]}
+                onBook={handleBookDesk}
+                onCancel={handleCancelBooking}
+                isLoading={actionLoading}
+                isBookingInProgress={
+                  bookingInProgress === rightColumnDesks[deskIndex]?.id
+                }
+              />
+            );
+          }
+        }
+        if (rowDesks.length > 0) {
+          rows.push(
+            <div key={`right-row-${row}`} className="flex gap-3">
+              {rowDesks}
+            </div>
+          );
+        }
+      }
+      return <div className="flex flex-col gap-2">{rows}</div>;
+    };
+
+    return (
+      <div className="flex flex-col items-center gap-6">
+        {/* Top row: B13-B16 */}
+        <div className="flex gap-3">
+          {topRowDesks.map((desk, index) => (
+            <DeskButton
+              key={desk?.id || `top-${index}`}
+              desk={desk}
+              onBook={handleBookDesk}
+              onCancel={handleCancelBooking}
+              isLoading={actionLoading}
+              isBookingInProgress={bookingInProgress === desk?.id}
+            />
+          ))}
+        </div>
+
+        {/* Bottom section: Left and Right columns with space in middle */}
+        <div className="flex gap-16">
+          {/* Left column: B01-B06 */}
+          {renderLeftColumn()}
+
+          {/* Right column: B07-B12 */}
+          {renderRightColumn()}
+        </div>
+      </div>
+    );
+  };
+
+  // Function to render IT Room layout (specific layout with left and right columns)
+  const renderITRoomLayout = () => {
+    // Create the specific layout structure for IT Room
+    const leftColumnDesks: DeskWithStatus[] = []; // C01-C08 (8 desks, 4 rows x 2 cols)
+    const rightColumnDesks: DeskWithStatus[] = []; // C09-C14 (6 desks, 3 rows x 2 cols)
+
+    // Map desks to their positions (assuming desks are ordered sequentially)
+    for (let i = 0; i < 14 && i < itRoomDesks.length; i++) {
+      const desk = itRoomDesks[i];
+      if (i < 8) {
+        // Left column: C01-C08 (first 8 desks)
+        leftColumnDesks.push(desk);
+      } else {
+        // Right column: C09-C14 (last 6 desks)
+        rightColumnDesks.push(desk);
+      }
+    }
+
+    // Render left column in landscape (4 rows x 2 cols)
+    const renderLeftColumn = () => {
+      const rows = [];
+      for (let row = 0; row < 4; row++) {
+        const rowDesks = [];
+        for (let col = 0; col < 2; col++) {
+          const deskIndex = col * 4 + (3 - row); // landscape orientation: reverse row order
+          if (deskIndex < leftColumnDesks.length) {
+            rowDesks.push(
+              <DeskButton
+                key={leftColumnDesks[deskIndex]?.id || `it-left-${deskIndex}`}
+                desk={leftColumnDesks[deskIndex]}
+                onBook={handleBookDesk}
+                onCancel={handleCancelBooking}
+                isLoading={actionLoading}
+                isBookingInProgress={
+                  bookingInProgress === leftColumnDesks[deskIndex]?.id
+                }
+              />
+            );
+          }
+        }
+        if (rowDesks.length > 0) {
+          rows.push(
+            <div key={`it-left-row-${row}`} className="flex gap-3">
+              {rowDesks}
+            </div>
+          );
+        }
+      }
+      return <div className="flex flex-col gap-2">{rows}</div>;
+    };
+
+    // Render right column in landscape (3 rows x 2 cols)
+    const renderRightColumn = () => {
+      const rows = [];
+      for (let row = 0; row < 3; row++) {
+        const rowDesks = [];
+        for (let col = 0; col < 2; col++) {
+          const deskIndex = col * 3 + (2 - row); // landscape orientation: reverse row order
+          if (deskIndex < rightColumnDesks.length) {
+            rowDesks.push(
+              <DeskButton
+                key={rightColumnDesks[deskIndex]?.id || `it-right-${deskIndex}`}
+                desk={rightColumnDesks[deskIndex]}
+                onBook={handleBookDesk}
+                onCancel={handleCancelBooking}
+                isLoading={actionLoading}
+                isBookingInProgress={
+                  bookingInProgress === rightColumnDesks[deskIndex]?.id
+                }
+              />
+            );
+          }
+        }
+        if (rowDesks.length > 0) {
+          rows.push(
+            <div key={`it-right-row-${row}`} className="flex gap-3">
+              {rowDesks}
+            </div>
+          );
+        }
+      }
+      return <div className="flex flex-col gap-2">{rows}</div>;
+    };
+
+    return (
+      <div className="flex gap-16 justify-center">
+        {/* Left column: C01-C08 */}
+        {renderLeftColumn()}
+
+        {/* Right column: C09-C14 */}
+        {renderRightColumn()}
+      </div>
+    );
   };
 
   if (loading) {
@@ -297,13 +576,56 @@ export default function DeskGrid({
       {/* Tip section */}
       <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
         <p className="text-sm text-blue-800">
-          💡 <strong>Tip :</strong> Click on available desks (green) to book
+          💡 <strong>Tip:</strong> Click on available desks (green) to book
           them, or click on your bookings (blue) to cancel them.
         </p>
       </div>
+
+      {/* Room Toggle */}
+      <div className="mb-6 flex justify-center">
+        <div className="bg-gray-100 p-1 rounded-lg">
+          <button
+            onClick={() => setSelectedRoom("DS")}
+            className={`px-4 py-2 rounded-md font-medium transition-all duration-200 ${
+              selectedRoom === "DS"
+                ? "bg-white text-blue-600 shadow-md"
+                : "text-gray-600 hover:text-gray-800"
+            }`}
+          >
+            🏢 DS Room
+          </button>
+          <button
+            onClick={() => setSelectedRoom("OP")}
+            className={`px-4 py-2 rounded-md font-medium transition-all duration-200 ${
+              selectedRoom === "OP"
+                ? "bg-white text-blue-600 shadow-md"
+                : "text-gray-600 hover:text-gray-800"
+            }`}
+          >
+            🩺 OP Room
+          </button>
+          <button
+            onClick={() => setSelectedRoom("IT")}
+            className={`px-4 py-2 rounded-md font-medium transition-all duration-200 ${
+              selectedRoom === "IT"
+                ? "bg-white text-blue-600 shadow-md"
+                : "text-gray-600 hover:text-gray-800"
+            }`}
+          >
+            💻 IT Room
+          </button>
+        </div>
+      </div>
+
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-semibold text-gray-800">
-          🪑 Desk Availability for {selectedDate}
+          🪑 Desk Availability for{" "}
+          {selectedRoom === "DS"
+            ? "DS Room"
+            : selectedRoom === "OP"
+            ? "OP Room"
+            : "IT Room"}{" "}
+          - {selectedDate}
         </h2>
 
         {/* Statistics */}
@@ -336,44 +658,13 @@ export default function DeskGrid({
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Zone A */}
-        <div>
-          <h3 className="text-lg font-medium mb-4 text-gray-700">
-            🏢 Zone A ({zoneADesks.length} desks)
-          </h3>
-          <div className="grid grid-cols-5 gap-3">
-            {zoneADesks.map((desk) => (
-              <DeskButton
-                key={desk.id}
-                desk={desk}
-                onBook={handleBookDesk}
-                onCancel={handleCancelBooking}
-                isLoading={actionLoading}
-                isBookingInProgress={bookingInProgress === desk.id}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Zone B */}
-        <div>
-          <h3 className="text-lg font-medium mb-4 text-gray-700">
-            🏢 Zone B ({zoneBDesks.length} desks)
-          </h3>
-          <div className="grid grid-cols-4 gap-3">
-            {zoneBDesks.map((desk) => (
-              <DeskButton
-                key={desk.id}
-                desk={desk}
-                onBook={handleBookDesk}
-                onCancel={handleCancelBooking}
-                isLoading={actionLoading}
-                isBookingInProgress={bookingInProgress === desk.id}
-              />
-            ))}
-          </div>
-        </div>
+      {/* Room Layout */}
+      <div className="mb-6">
+        {selectedRoom === "DS"
+          ? renderDSRoomLayout()
+          : selectedRoom === "OP"
+          ? renderOPRoomLayout()
+          : renderITRoomLayout()}
       </div>
 
       {/* Legend */}
