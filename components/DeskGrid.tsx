@@ -21,6 +21,7 @@ type DeskButtonProps = {
   onCancel: (bookingId: string) => void; // Function to cancel a booking
   isLoading: boolean; // Loading state
   isBookingInProgress: boolean; // Booking in progress state
+  userHasAssignedDesk: boolean; // Whether user has a permanently assigned desk
 };
 
 // Desk button component
@@ -30,6 +31,7 @@ function DeskButton({
   onCancel,
   isLoading,
   isBookingInProgress,
+  userHasAssignedDesk,
 }: DeskButtonProps) {
   const getStatusStyle = () => {
     // If booking in progress, display in blue
@@ -44,6 +46,10 @@ function DeskButton({
         return "bg-red-100 border-red-300 text-red-800 cursor-not-allowed"; // Booked desk
       case "my_booking":
         return "bg-blue-100 border-blue-300 text-blue-800 hover:bg-blue-200"; // My booking
+      case "assigned":
+        return "bg-orange-100 border-orange-300 text-orange-800 cursor-not-allowed"; // Assigned to someone else
+      case "my_assigned":
+        return "bg-purple-100 border-purple-300 text-purple-800"; // My assigned desk (not bookable)
       default:
         return "bg-gray-100 border-gray-300 text-gray-800"; // Default
     }
@@ -62,6 +68,10 @@ function DeskButton({
         return "❌"; // Booked desk
       case "my_booking":
         return "💙"; // My booking
+      case "assigned":
+        return "🔒"; // Assigned to someone else
+      case "my_assigned":
+        return "👤"; // My assigned desk
       default:
         return "❓"; // Default
     }
@@ -71,16 +81,23 @@ function DeskButton({
   const handleClick = () => {
     if (isLoading || isBookingInProgress) return;
 
+    // If user has assigned desk, they cannot book other desks
+    if (userHasAssignedDesk && desk.status === "available") {
+      return; // Do nothing - booking disabled
+    }
+
     if (desk.status === "available") {
       onBook(desk.id);
     } else if (desk.status === "my_booking" && desk.booking) {
       onCancel(desk.booking.id);
     }
+    // Note: "assigned" and "my_assigned" desks are not clickable for booking
   };
 
   // Function to check if the desk is clickable
   const isClickable =
-    desk.status === "available" || desk.status === "my_booking";
+    (desk.status === "available" && !userHasAssignedDesk) ||
+    desk.status === "my_booking";
 
   return (
     <button
@@ -103,6 +120,10 @@ function DeskButton({
           ? `Click to book ${desk.name}`
           : desk.status === "my_booking"
           ? `Your booking - Click to cancel`
+          : desk.status === "assigned"
+          ? `Permanently assigned to ${desk.assigned_user?.first_name} ${desk.assigned_user?.last_name}`
+          : desk.status === "my_assigned"
+          ? `Your permanently assigned desk`
           : `Booked by someone else`
       }
     >
@@ -116,6 +137,14 @@ function DeskButton({
           <span className="text-xs opacity-75">
             {`${desk.booking.users.first_name} ${desk.booking.users.last_name}`.trim()}
           </span>
+        )}
+        {desk.status === "assigned" && desk.assigned_user && (
+          <span className="text-xs opacity-75">
+            {`${desk.assigned_user.first_name} ${desk.assigned_user.last_name}`.trim()}
+          </span>
+        )}
+        {desk.status === "my_assigned" && (
+          <span className="text-xs opacity-75">Your desk</span>
         )}
       </div>
     </button>
@@ -284,6 +313,11 @@ export default function DeskGrid({
       ? opRoomDesks
       : itRoomDesks;
 
+  // Check if current user has an assigned desk (to disable booking buttons)
+  const userHasAssignedDesk = desks.some(
+    (desk) => desk.assigned_to_user_id === user?.id
+  );
+
   // Statistiques
   const stats = {
     total: currentRoomDesks.length,
@@ -317,6 +351,7 @@ export default function DeskGrid({
                 onCancel={handleCancelBooking}
                 isLoading={actionLoading}
                 isBookingInProgress={bookingInProgress === desk.id}
+                userHasAssignedDesk={userHasAssignedDesk}
               />
             );
           }
@@ -385,6 +420,7 @@ export default function DeskGrid({
                 isBookingInProgress={
                   bookingInProgress === leftColumnDesks[deskIndex]?.id
                 }
+                userHasAssignedDesk={userHasAssignedDesk}
               />
             );
           }
@@ -418,6 +454,7 @@ export default function DeskGrid({
                 isBookingInProgress={
                   bookingInProgress === rightColumnDesks[deskIndex]?.id
                 }
+                userHasAssignedDesk={userHasAssignedDesk}
               />
             );
           }
@@ -445,6 +482,7 @@ export default function DeskGrid({
               onCancel={handleCancelBooking}
               isLoading={actionLoading}
               isBookingInProgress={bookingInProgress === desk?.id}
+              userHasAssignedDesk={userHasAssignedDesk}
             />
           ))}
         </div>
@@ -497,6 +535,7 @@ export default function DeskGrid({
                 isBookingInProgress={
                   bookingInProgress === leftColumnDesks[deskIndex]?.id
                 }
+                userHasAssignedDesk={userHasAssignedDesk}
               />
             );
           }
@@ -530,6 +569,7 @@ export default function DeskGrid({
                 isBookingInProgress={
                   bookingInProgress === rightColumnDesks[deskIndex]?.id
                 }
+                userHasAssignedDesk={userHasAssignedDesk}
               />
             );
           }
@@ -682,6 +722,14 @@ export default function DeskGrid({
           <span className="flex items-center gap-2">
             <span className="w-4 h-4 bg-blue-100 border border-blue-300 rounded"></span>
             Your booking - Click to cancel
+          </span>
+          <span className="flex items-center gap-2">
+            <span className="w-4 h-4 bg-orange-100 border border-orange-300 rounded"></span>
+            Assigned to colleague
+          </span>
+          <span className="flex items-center gap-2">
+            <span className="w-4 h-4 bg-purple-100 border border-purple-300 rounded"></span>
+            Your assigned desk
           </span>
           <span className="flex items-center gap-2">
             <span className="w-4 h-4 bg-blue-100 border border-blue-300 rounded animate-pulse"></span>

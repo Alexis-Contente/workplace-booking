@@ -29,6 +29,8 @@ export interface Desk {
   description: string;
   location: string;
   is_available: boolean; // Whether the desk can be booked
+  assigned_to_user_id?: string; // If set, desk is permanently assigned to this user
+  assignment_note?: string; // Optional note about the assignment
   created_at: string;
 }
 
@@ -61,8 +63,13 @@ export interface Booking {
  * Combines desk info with real-time availability status
  */
 export interface DeskWithStatus extends Desk {
-  status: "available" | "booked" | "my_booking";
+  status: "available" | "booked" | "my_booking" | "assigned" | "my_assigned";
   booking?: Booking; // If booked, contains the booking details
+  assigned_user?: {
+    first_name: string;
+    last_name: string;
+    email: string;
+  }; // If assigned, contains the assigned user details
 }
 
 // ============================================================================
@@ -137,6 +144,7 @@ async function ensureUserProfile(): Promise<{
  *
  * BUSINESS LOGIC:
  * - Only return desks that are marked as available (is_available = true)
+ * - Include assignment information (assigned user details)
  * - Sort alphabetically by name for consistent UI display
  *
  * @returns Promise with array of desks and any error
@@ -147,7 +155,16 @@ export async function getAllDesks(): Promise<{
 }> {
   const { data: desks, error } = await supabase
     .from("desks")
-    .select("*")
+    .select(
+      `
+      *,
+      assigned_user:assigned_to_user_id (
+        first_name,
+        last_name,
+        email
+      )
+    `
+    )
     .eq("is_available", true) // Filter out disabled desks
     .order("name"); // Sort alphabetically
 
@@ -228,9 +245,27 @@ export async function getDesksWithStatus(
   const desksWithStatus: DeskWithStatus[] = desksResult.desks.map((desk) => {
     const booking = bookingsByDeskId.get(desk.id);
 
-    // Determine booking status
-    let status: "available" | "booked" | "my_booking" = "available";
-    if (booking) {
+    // Determine desk status with priority order:
+    // 1. Assignment status (highest priority)
+    // 2. Booking status
+    // 3. Available (default)
+    let status:
+      | "available"
+      | "booked"
+      | "my_booking"
+      | "assigned"
+      | "my_assigned" = "available";
+
+    // Check if desk is permanently assigned
+    if (desk.assigned_to_user_id) {
+      if (currentUserId && desk.assigned_to_user_id === currentUserId) {
+        status = "my_assigned"; // User's own assigned desk
+      } else {
+        status = "assigned"; // Assigned to someone else
+      }
+    }
+    // If not assigned, check for bookings
+    else if (booking) {
       if (currentUserId && booking.user_id === currentUserId) {
         status = "my_booking"; // User's own booking
       } else {
@@ -242,6 +277,15 @@ export async function getDesksWithStatus(
       ...desk,
       status,
       booking, // Include booking details if it exists
+      assigned_user: (
+        desk as Desk & {
+          assigned_user?: {
+            first_name: string;
+            last_name: string;
+            email: string;
+          };
+        }
+      ).assigned_user, // Include assigned user details
     };
   });
 
@@ -296,6 +340,29 @@ export async function createBooking(
     };
   }
 
+  // Step 2.5: Check if user has a permanently assigned desk
+  // Business rule: Users with assigned desks cannot make additional bookings
+  const { data: assignedDesk, error: assignedError } = await supabase
+    .from("desks")
+    .select("name, assignment_note")
+    .eq("assigned_to_user_id", user.id)
+    .limit(1);
+
+  if (assignedError) {
+    return { booking: null, error: assignedError };
+  }
+
+  // Reject if user has a permanently assigned desk
+  if (assignedDesk && assignedDesk.length > 0) {
+    return {
+      booking: null,
+      error: {
+        message: `You have a permanently assigned desk (${assignedDesk[0].name}) and cannot make additional bookings. Please contact your administrator if you need to change desks.`,
+        code: "USER_HAS_ASSIGNED_DESK",
+      } as PostgrestError,
+    };
+  }
+
   // Step 3: Check if user already has a booking for this date
   // Business rule: One booking per user per day
   const { data: existingBooking, error: checkError } = await supabase
@@ -318,6 +385,32 @@ export async function createBooking(
         message:
           "You already have a booking for this date. Only one booking per day is allowed.",
         code: "USER_BOOKING_LIMIT_EXCEEDED",
+      } as PostgrestError,
+    };
+  }
+
+  // Step 3.5: Check if desk is permanently assigned to someone else
+  // Business rule: Cannot book a desk assigned to another user
+  const { data: deskInfo, error: deskError } = await supabase
+    .from("desks")
+    .select("assigned_to_user_id, name")
+    .eq("id", deskId)
+    .single();
+
+  if (deskError) {
+    return { booking: null, error: deskError };
+  }
+
+  // Reject if desk is assigned to someone else
+  if (
+    deskInfo.assigned_to_user_id &&
+    deskInfo.assigned_to_user_id !== user.id
+  ) {
+    return {
+      booking: null,
+      error: {
+        message: `This desk (${deskInfo.name}) is permanently assigned to another user and cannot be booked.`,
+        code: "DESK_PERMANENTLY_ASSIGNED",
       } as PostgrestError,
     };
   }
