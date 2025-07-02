@@ -7,7 +7,7 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Vérifier la session actuelle
+    // Verify current session
     const getSession = async () => {
       const {
         data: { session },
@@ -18,7 +18,7 @@ export function useAuth() {
 
     getSession();
 
-    // Écouter les changements d'authentification
+    // Listen for authentication changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
