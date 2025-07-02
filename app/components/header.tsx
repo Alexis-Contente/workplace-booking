@@ -26,7 +26,7 @@ export default function Header() {
         </h1>
         <div className="flex gap-4 items-center">
           {isAuthenticated ? (
-            // Menu pour utilisateurs connectés
+            // Menu for authenticated users
             <>
               <Link href="/">
                 <button className="bg-white text-blue-500 px-4 py-2 rounded hover:bg-blue-50 transition-colors cursor-pointer">
@@ -54,7 +54,7 @@ export default function Header() {
               </button>
             </>
           ) : (
-            // Menu pour utilisateurs non connectés
+            // Menu for non-authenticated users
             <>
               <Link href="/login">
                 <button className="bg-white text-blue-500 px-4 py-2 rounded hover:bg-blue-50 transition-colors cursor-pointer">
