@@ -2,13 +2,17 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "../../hooks/useAuth";
-import { getUserBookings, cancelBooking } from "../../lib/desk-helpers";
+import {
+  getUserBookingsWithCleanup,
+  cancelBooking,
+} from "../../lib/desk-helpers";
 import type { Booking } from "../../lib/desk-helpers";
 import ProtectedRoute from "../../components/ProtectedRoute";
 import Header from "../components/header";
 import Footer from "../components/footer";
 import Link from "next/link";
 
+// Extended booking interface with desk relationship data for UI display
 interface BookingWithDesk extends Booking {
   desks: {
     name: string;
@@ -24,20 +28,29 @@ export default function ReservationsPage() {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // Récupérer les réservations
+  // Fetch user bookings with automatic cleanup of old records (90+ days)
   const fetchBookings = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const { bookings: fetchedBookings, error: fetchError } =
-        await getUserBookings(user?.id, 50);
+      const {
+        bookings: fetchedBookings,
+        cleanupResult,
+        error: fetchError,
+      } = await getUserBookingsWithCleanup(user?.id, 50);
 
       if (fetchError) {
         setError("Failed to load your reservations");
         console.error("Error fetching bookings:", fetchError);
       } else {
         setBookings(fetchedBookings as BookingWithDesk[]);
+        // Log cleanup results for monitoring (visible in browser console)
+        if (cleanupResult && cleanupResult.deletedCount > 0) {
+          console.log(
+            `🧹 Cleaned up ${cleanupResult.deletedCount} old bookings (>90 days)`
+          );
+        }
       }
     } catch (err) {
       setError("An unexpected error occurred");
@@ -47,7 +60,7 @@ export default function ReservationsPage() {
     }
   };
 
-  // Annuler une réservation
+  // Cancel a booking with optimistic UI updates and error handling
   const handleCancelBooking = async (bookingId: string, deskName: string) => {
     setActionLoading(bookingId);
     setError(null);
@@ -60,7 +73,7 @@ export default function ReservationsPage() {
         setError("Failed to cancel booking");
         console.error("Cancel error:", cancelError);
       } else {
-        // Rafraîchir les données
+        // Refresh data and show success message
         await fetchBookings();
         setSuccessMessage(`Booking for ${deskName} cancelled successfully! ✅`);
         setTimeout(() => setSuccessMessage(null), 3000);
@@ -79,12 +92,11 @@ export default function ReservationsPage() {
     }
   }, [user]);
 
-  // Séparer les réservations par catégorie
+  // Filter bookings into upcoming and past categories based on current date
   const today = new Date().toISOString().split("T")[0];
   const upcomingBookings = bookings.filter((b) => b.booking_date >= today);
-  const pastBookings = bookings.filter((b) => b.booking_date < today);
 
-  // Statistiques
+  // Calculate statistics for dashboard cards
   const stats = {
     total: bookings.length,
     upcoming: upcomingBookings.length,
@@ -96,7 +108,7 @@ export default function ReservationsPage() {
     }).length,
   };
 
-  // Formatage des dates
+  // Format booking dates with human-readable labels (Today, Tomorrow, etc.)
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const today = new Date();
@@ -117,6 +129,7 @@ export default function ReservationsPage() {
     }
   };
 
+  // Loading state with skeleton UI
   if (loading) {
     return (
       <ProtectedRoute>
@@ -148,7 +161,7 @@ export default function ReservationsPage() {
 
         <main className="flex-1 bg-gray-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            {/* Header */}
+            {/* Page header with title and description */}
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-gray-900">
                 My Reservations 📅
@@ -158,7 +171,7 @@ export default function ReservationsPage() {
               </p>
             </div>
 
-            {/* Statistiques */}
+            {/* Statistics dashboard cards showing booking metrics */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               <div className="bg-white p-6 rounded-lg shadow-md">
                 <div className="flex items-center">
@@ -209,7 +222,7 @@ export default function ReservationsPage() {
               </div>
             </div>
 
-            {/* Messages */}
+            {/* Error and success message display */}
             {error && (
               <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
                 <p className="text-sm text-red-800">{error}</p>
@@ -228,7 +241,7 @@ export default function ReservationsPage() {
               </div>
             )}
 
-            {/* Réservations à venir */}
+            {/* Main section: Upcoming reservations with management actions */}
             <div className="bg-white rounded-lg shadow-md mb-8">
               <div className="p-6 border-b border-gray-200">
                 <div className="flex justify-between items-center">
@@ -245,6 +258,7 @@ export default function ReservationsPage() {
               </div>
 
               <div className="p-6">
+                {/* Empty state when no upcoming bookings exist */}
                 {upcomingBookings.length === 0 ? (
                   <div className="text-center py-12 text-gray-500">
                     <div className="text-6xl mb-4">🪑</div>
@@ -262,6 +276,7 @@ export default function ReservationsPage() {
                     </Link>
                   </div>
                 ) : (
+                  // List of upcoming bookings with cancel functionality
                   <div className="space-y-4">
                     {upcomingBookings.map((booking) => (
                       <div
@@ -313,52 +328,6 @@ export default function ReservationsPage() {
                 )}
               </div>
             </div>
-
-            {/* Historique */}
-            {pastBookings.length > 0 && (
-              <div className="bg-white rounded-lg shadow-md">
-                <div className="p-6 border-b border-gray-200">
-                  <h2 className="text-xl font-semibold text-gray-800">
-                    📊 Booking History ({pastBookings.length})
-                  </h2>
-                </div>
-
-                <div className="p-6">
-                  <div className="space-y-3">
-                    {pastBookings.slice(0, 10).map((booking) => (
-                      <div
-                        key={booking.id}
-                        className="flex items-center justify-between p-3 border border-gray-100 rounded-lg bg-gray-50"
-                      >
-                        <div className="flex items-center space-x-3">
-                          <div className="p-2 bg-gray-200 rounded-full">
-                            <span className="text-sm">🪑</span>
-                          </div>
-                          <div>
-                            <h5 className="font-medium text-gray-700">
-                              Desk {booking.desks.name}
-                            </h5>
-                            <p className="text-sm text-gray-500">
-                              {booking.desks.location} •{" "}
-                              {formatDate(booking.booking_date)}
-                            </p>
-                          </div>
-                        </div>
-                        <span className="text-xs text-gray-400">
-                          ✅ Completed
-                        </span>
-                      </div>
-                    ))}
-
-                    {pastBookings.length > 10 && (
-                      <p className="text-center text-sm text-gray-500 pt-4">
-                        ... and {pastBookings.length - 10} more past bookings
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </main>
         <Footer />
