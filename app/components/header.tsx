@@ -33,14 +33,19 @@ export default function Header() {
                   Dashboard
                 </button>
               </Link>
+              <Link href="/reservations">
+                <button className="bg-white text-blue-500 px-4 py-2 rounded hover:bg-blue-50 transition-colors cursor-pointer">
+                  Reservations
+                </button>
+              </Link>
               <Link href="/profile">
                 <button className="bg-white text-blue-500 px-4 py-2 rounded hover:bg-blue-50 transition-colors cursor-pointer">
                   Profile
                 </button>
               </Link>
-              <Link href="/reservations">
+              <Link href="/about">
                 <button className="bg-white text-blue-500 px-4 py-2 rounded hover:bg-blue-50 transition-colors cursor-pointer">
-                  My Reservations
+                  About
                 </button>
               </Link>
               <div className="text-white text-sm">
