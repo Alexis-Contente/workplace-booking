@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useAuth } from "../../hooks/useAuth";
-import { useUserProfile } from "../../hooks/useUserProfile";
-import { signOut } from "../../lib/auth-helpers";
+import { useAuth } from "../hooks/useAuth";
+import { useUserProfile } from "../hooks/useUserProfile";
+import { signOut } from "../lib/auth-helpers";
 
 export default function Header() {
   const { isAuthenticated } = useAuth();

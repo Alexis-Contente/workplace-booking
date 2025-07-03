@@ -8,8 +8,8 @@ import {
 } from "../../lib/desk-helpers";
 import type { Booking } from "../../lib/desk-helpers";
 import ProtectedRoute from "../../components/ProtectedRoute";
-import Header from "../components/header";
-import Footer from "../components/footer";
+import Header from "../../components/header";
+import Footer from "../../components/footer";
 import Link from "next/link";
 import { LoadingSpinner } from "../../components/ui/spinner";
 

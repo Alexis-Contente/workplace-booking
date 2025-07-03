@@ -5,8 +5,8 @@ import { useAuth } from "../../hooks/useAuth";
 import { useUserProfile } from "../../hooks/useUserProfile";
 import { supabase } from "../../lib/supabase";
 import ProtectedRoute from "../../components/ProtectedRoute";
-import Header from "../components/header";
-import Footer from "../components/footer";
+import Header from "../../components/header";
+import Footer from "../../components/footer";
 import Link from "next/link";
 
 export default function Profile() {
