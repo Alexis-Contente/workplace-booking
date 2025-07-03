@@ -11,6 +11,7 @@ import ProtectedRoute from "../../components/ProtectedRoute";
 import Header from "../components/header";
 import Footer from "../components/footer";
 import Link from "next/link";
+import { LoadingSpinner } from "../../components/ui/spinner";
 
 // Extended booking interface with desk relationship data for UI display
 interface BookingWithDesk extends Booking {
@@ -129,7 +130,7 @@ export default function ReservationsPage() {
     }
   };
 
-  // Loading state with skeleton UI
+  // Loading state with spinner
   if (loading) {
     return (
       <ProtectedRoute>
@@ -137,15 +138,9 @@ export default function ReservationsPage() {
           <Header />
           <main className="flex-1 bg-gray-50">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-              <div className="animate-pulse">
-                <div className="h-8 bg-gray-300 rounded w-1/3 mb-6"></div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="h-24 bg-gray-200 rounded-lg"></div>
-                  ))}
-                </div>
-                <div className="h-96 bg-gray-200 rounded-lg"></div>
-              </div>
+              <LoadingSpinner loading={true} size="large" className="min-h-96">
+                <div></div>
+              </LoadingSpinner>
             </div>
           </main>
           <Footer />

@@ -8,6 +8,7 @@ import {
   cancelBooking,
 } from "../lib/desk-helpers";
 import type { DeskWithStatus } from "../lib/desk-helpers";
+import { LoadingSpinner } from "./ui/spinner";
 
 // TYPES
 type DeskGridProps = {
@@ -599,14 +600,9 @@ export default function DeskGrid({
   if (loading) {
     return (
       <div className="bg-white rounded-lg shadow-md p-6">
-        <div className="animate-pulse">
-          <div className="h-6 bg-gray-300 rounded w-1/3 mb-4"></div>
-          <div className="grid grid-cols-8 gap-3">
-            {Array.from({ length: 64 }, (_, i) => (
-              <div key={i} className="h-16 bg-gray-200 rounded"></div>
-            ))}
-          </div>
-        </div>
+        <LoadingSpinner loading={true} size="large" className="min-h-96">
+          <div></div>
+        </LoadingSpinner>
       </div>
     );
   }
