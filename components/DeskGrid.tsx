@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { useAuth } from "../hooks/useAuth";
 import {
   getDesksWithStatus,
@@ -124,7 +125,7 @@ function DeskButton({
           : desk.status === "assigned"
           ? `Permanently assigned to ${desk.assigned_user?.first_name} ${desk.assigned_user?.last_name}`
           : desk.status === "my_assigned"
-          ? `Your permanently assigned desk`
+          ? `Your desk`
           : `Booked by someone else`
       }
     >
@@ -165,27 +166,28 @@ export default function DeskGrid({
   const [bookingInProgress, setBookingInProgress] = useState<string | null>(
     null
   ); // ID of the desk in progress
-  const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<"DS" | "OP" | "IT">("DS"); // New state for room selection
 
   // Fetch desks and their status
   const fetchDesks = async () => {
     setLoading(true);
-    setError(null);
 
     try {
       const { desks: fetchedDesks, error: fetchError } =
         await getDesksWithStatus(selectedDate, user?.id);
 
       if (fetchError) {
-        setError("Failed to load desk availability");
+        toast.error("❌ Error loading", {
+          description: "Impossible to load the desk availability",
+        });
         console.error("Error fetching desks:", fetchError);
       } else {
         setDesks(fetchedDesks);
       }
     } catch (err) {
-      setError("An unexpected error occurred");
+      toast.error("❌ Unexpected error", {
+        description: "An unexpected error occurred",
+      });
       console.error("Unexpected error:", err);
     } finally {
       setLoading(false);
@@ -196,8 +198,6 @@ export default function DeskGrid({
   const handleBookDesk = async (deskId: string) => {
     setActionLoading(true);
     setBookingInProgress(deskId); // Mark the desk as in progress
-    setError(null); // Reset errors
-    setSuccessMessage(null); // Reset success messages
 
     try {
       // Last minute check: is the desk still available?
@@ -205,13 +205,17 @@ export default function DeskGrid({
         await getDesksWithStatus(selectedDate, user?.id);
 
       if (checkError) {
-        setError("Failed to verify desk availability");
+        toast.error("❌ Error checking", {
+          description: "Impossible to check the desk availability",
+        });
         return;
       }
 
       const targetDesk = currentDesks.find((d) => d.id === deskId);
       if (!targetDesk || targetDesk.status !== "available") {
-        setError("This desk is no longer available! Refreshing...");
+        toast.error("❌ Desk not available", {
+          description: "This desk is no longer available! Refreshing...",
+        });
         await fetchDesks();
         return;
       }
@@ -229,33 +233,39 @@ export default function DeskGrid({
 
         // Can't book more than one desk per day
         if (bookError.code === "USER_BOOKING_LIMIT_EXCEEDED") {
-          setError(
-            "You already have a booking for this date. Only one booking per day is allowed."
-          );
+          toast.error("❌ Booking limit exceeded", {
+            description:
+              "You already have a booking for this date. Only one booking per day is allowed.",
+          });
         } else if (
           errorMessage.includes("duplicate key") ||
           errorMessage.includes("unique constraint") ||
           errorMessage.includes("bookings_desk_id_booking_date_key")
         ) {
-          setError(
-            "This desk was just booked by someone else! Refreshing availability..."
-          );
+          toast.error("❌ Desk already booked", {
+            description:
+              "This desk was just booked by someone else! Refreshing...",
+          });
           // Refresh immediately to see the new status
           await fetchDesks();
         } else {
-          setError("Failed to book desk: " + errorMessage);
+          toast.error("❌ Booking error", {
+            description: "Impossible to book the desk: " + errorMessage,
+          });
         }
       } else if (booking) {
         // Success - refresh the data
         await fetchDesks();
         onBookingChange?.();
-        // Temporary success message
-        setSuccessMessage(`Desk ${targetDesk.name} booked successfully! 🎉`);
-        // Clear the success message after 3 seconds
-        setTimeout(() => setSuccessMessage(null), 3000);
+        // Success message
+        toast.success("✅ Booking confirmed", {
+          description: `Desk ${targetDesk.name} booked successfully! 🎉`,
+        });
       }
     } catch (err) {
-      setError("An unexpected error occurred");
+      toast.error("❌ Unexpected error", {
+        description: "An unexpected error occurred",
+      });
       console.error("Unexpected booking error:", err);
     } finally {
       setActionLoading(false);
@@ -266,25 +276,28 @@ export default function DeskGrid({
   // Cancel a booking
   const handleCancelBooking = async (bookingId: string) => {
     setActionLoading(true);
-    setError(null);
-    setSuccessMessage(null);
 
     try {
       const { success, error: cancelError } = await cancelBooking(bookingId);
 
       if (cancelError || !success) {
-        setError("Failed to cancel booking");
+        toast.error("❌ Error cancelling", {
+          description: "Impossible to cancel the booking",
+        });
         console.error("Cancel error:", cancelError);
       } else {
         // Refresh the data
         await fetchDesks();
         onBookingChange?.();
         // Success message
-        setSuccessMessage("Booking cancelled successfully! ✅");
-        setTimeout(() => setSuccessMessage(null), 3000);
+        toast.success("✅ Booking cancelled", {
+          description: "Booking cancelled successfully! ✅",
+        });
       }
     } catch (err) {
-      setError("An unexpected error occurred");
+      toast.error("❌ Unexpected error", {
+        description: "An unexpected error occurred",
+      });
       console.error("Unexpected cancel error:", err);
     } finally {
       setActionLoading(false);
@@ -612,7 +625,7 @@ export default function DeskGrid({
       {/* Tip section */}
       <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
         <p className="text-sm text-blue-800">
-          💡 <strong>Tip:</strong> Click on available desks (green) to book
+          💡 <strong>Tip:</strong> Click on the available desks (green) to book
           them, or click on your bookings (blue) to cancel them.
         </p>
       </div>
@@ -655,7 +668,7 @@ export default function DeskGrid({
 
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-semibold text-gray-800">
-          🪑 Desk Availability for{" "}
+          🪑 Desk availability for{" "}
           {selectedRoom === "DS"
             ? "DS Room"
             : selectedRoom === "OP"
@@ -676,24 +689,6 @@ export default function DeskGrid({
         </div>
       </div>
 
-      {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-          <p className="text-sm text-red-800">{error}</p>
-          <button
-            onClick={fetchDesks}
-            className="mt-2 text-xs text-red-600 hover:text-red-800 underline"
-          >
-            Try again
-          </button>
-        </div>
-      )}
-
-      {successMessage && (
-        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
-          <p className="text-sm text-green-800">{successMessage}</p>
-        </div>
-      )}
-
       {/* Room Layout */}
       <div className="mb-6">
         {selectedRoom === "DS"
@@ -713,7 +708,7 @@ export default function DeskGrid({
           </span>
           <span className="flex items-center gap-2">
             <span className="w-4 h-4 bg-red-100 border border-red-300 rounded"></span>
-            Booked by colleague
+            Booked by a colleague
           </span>
           <span className="flex items-center gap-2">
             <span className="w-4 h-4 bg-blue-100 border border-blue-300 rounded"></span>
@@ -721,7 +716,7 @@ export default function DeskGrid({
           </span>
           <span className="flex items-center gap-2">
             <span className="w-4 h-4 bg-orange-100 border border-orange-300 rounded"></span>
-            Assigned to colleague
+            Assigned to a colleague
           </span>
           <span className="flex items-center gap-2">
             <span className="w-4 h-4 bg-purple-100 border border-purple-300 rounded"></span>
