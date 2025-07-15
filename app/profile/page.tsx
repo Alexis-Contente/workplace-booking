@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { useAuth } from "../../hooks/useAuth";
 import { useUserProfile } from "../../hooks/useUserProfile";
 import { supabase } from "../../lib/supabase";
@@ -16,8 +17,6 @@ export default function Profile() {
   const [editFirstName, setEditFirstName] = useState("");
   const [editLastName, setEditLastName] = useState("");
   const [saveLoading, setSaveLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [bookingStats, setBookingStats] = useState({
     total: 0,
     thisMonth: 0,
@@ -61,7 +60,6 @@ export default function Profile() {
     if (!profile || (!editFirstName.trim() && !editLastName.trim())) return;
 
     setSaveLoading(true);
-    setError(null);
 
     try {
       const firstName = editFirstName.trim() || profile.first_name || "";
@@ -76,7 +74,9 @@ export default function Profile() {
         .eq("id", profile.id);
 
       if (updateError) {
-        setError("Failed to update profile");
+        toast.error("❌ Error updating", {
+          description: "Impossible to update the profile",
+        });
       } else {
         const updatedProfile = {
           ...profile,
@@ -85,11 +85,14 @@ export default function Profile() {
         };
         updateProfile(updatedProfile);
         setEditing(false);
-        setSuccessMessage("Profile updated successfully! ✅");
-        setTimeout(() => setSuccessMessage(null), 3000);
+        toast.success("✅ Profile updated", {
+          description: "Profile updated successfully!",
+        });
       }
     } catch (err) {
-      setError("An unexpected error occurred");
+      toast.error("❌ Unexpected error", {
+        description: "An unexpected error occurred",
+      });
       console.error("Profile update error:", err);
     } finally {
       setSaveLoading(false);
@@ -101,7 +104,6 @@ export default function Profile() {
     setEditFirstName(profile?.first_name || "");
     setEditLastName(profile?.last_name || "");
     setEditing(false);
-    setError(null);
   };
 
   // Initialize edit names when profile is loaded
@@ -169,17 +171,6 @@ export default function Profile() {
             </div>
 
             {/* Messages */}
-            {error && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
-                <p className="text-sm text-red-800">{error}</p>
-              </div>
-            )}
-
-            {successMessage && (
-              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-md">
-                <p className="text-sm text-green-800">{successMessage}</p>
-              </div>
-            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {/* Main information */}
