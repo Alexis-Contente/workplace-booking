@@ -8,7 +8,8 @@ ALTER DATABASE postgres SET timezone TO 'Europe/Paris';
 CREATE TABLE IF NOT EXISTS public.users (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     email VARCHAR(255) UNIQUE NOT NULL,
-    name VARCHAR(255) NOT NULL,
+    first_name VARCHAR(255) NOT NULL,
+    last_name VARCHAR(255) NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
@@ -19,6 +20,8 @@ CREATE TABLE IF NOT EXISTS public.desks (
     description TEXT,
     location VARCHAR(255), -- e.g., "Open Space - Zone A", "Open Space - Zone B"
     is_available BOOLEAN DEFAULT true,
+    assigned_to_user_id UUID REFERENCES public.users(id) ON DELETE SET NULL, -- For permanent desk assignments
+    assignment_note TEXT, -- Optional note about the assignment
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
