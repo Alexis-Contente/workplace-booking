@@ -28,6 +28,9 @@ export default function Header() {
           {isAuthenticated ? (
             // Menu for authenticated users
             <>
+              <div className="text-white text-sm">
+                Welcome, {getFullName() || "User"}!
+              </div>
               <Link href="/">
                 <button className="bg-white text-blue-500 px-4 py-2 rounded hover:bg-blue-50 transition-colors cursor-pointer">
                   Dashboard
@@ -48,9 +51,6 @@ export default function Header() {
                   About
                 </button>
               </Link>
-              <div className="text-white text-sm">
-                Welcome, {getFullName() || "User"}!
-              </div>
               <button
                 onClick={handleLogout}
                 className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors cursor-pointer"
