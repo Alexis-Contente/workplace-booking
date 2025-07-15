@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { useAuth } from "../../hooks/useAuth";
 import {
   getUserBookingsWithCleanup,
@@ -26,13 +27,10 @@ export default function ReservationsPage() {
   const [bookings, setBookings] = useState<BookingWithDesk[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Fetch user bookings with automatic cleanup of old records (90+ days)
   const fetchBookings = async () => {
     setLoading(true);
-    setError(null);
 
     try {
       const {
@@ -42,7 +40,9 @@ export default function ReservationsPage() {
       } = await getUserBookingsWithCleanup(user?.id, 50);
 
       if (fetchError) {
-        setError("Failed to load your reservations");
+        toast.error("❌ Error loading", {
+          description: "Impossible to load your reservations",
+        });
         console.error("Error fetching bookings:", fetchError);
       } else {
         setBookings(fetchedBookings as BookingWithDesk[]);
@@ -54,7 +54,9 @@ export default function ReservationsPage() {
         }
       }
     } catch (err) {
-      setError("An unexpected error occurred");
+      toast.error("❌ Unexpected error", {
+        description: "An unexpected error occurred",
+      });
       console.error("Unexpected error:", err);
     } finally {
       setLoading(false);
@@ -64,23 +66,26 @@ export default function ReservationsPage() {
   // Cancel a booking with optimistic UI updates and error handling
   const handleCancelBooking = async (bookingId: string, deskName: string) => {
     setActionLoading(bookingId);
-    setError(null);
-    setSuccessMessage(null);
 
     try {
       const { success, error: cancelError } = await cancelBooking(bookingId);
 
       if (cancelError || !success) {
-        setError("Failed to cancel booking");
+        toast.error("❌ Error cancelling", {
+          description: "Impossible to cancel the reservation",
+        });
         console.error("Cancel error:", cancelError);
       } else {
         // Refresh data and show success message
         await fetchBookings();
-        setSuccessMessage(`Booking for ${deskName} cancelled successfully! ✅`);
-        setTimeout(() => setSuccessMessage(null), 3000);
+        toast.success("✅ Reservation cancelled", {
+          description: `Reservation for ${deskName} cancelled successfully!`,
+        });
       }
     } catch (err) {
-      setError("An unexpected error occurred");
+      toast.error("❌ Unexpected error", {
+        description: "An unexpected error occurred",
+      });
       console.error("Unexpected cancel error:", err);
     } finally {
       setActionLoading(null);
@@ -216,25 +221,6 @@ export default function ReservationsPage() {
                 </div>
               </div>
             </div>
-
-            {/* Error and success message display */}
-            {error && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
-                <p className="text-sm text-red-800">{error}</p>
-                <button
-                  onClick={fetchBookings}
-                  className="mt-2 text-xs text-red-600 hover:text-red-800 underline"
-                >
-                  Try again
-                </button>
-              </div>
-            )}
-
-            {successMessage && (
-              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-md">
-                <p className="text-sm text-green-800">{successMessage}</p>
-              </div>
-            )}
 
             {/* Main section: Upcoming reservations with management actions */}
             <div className="bg-white rounded-lg shadow-md mb-8">
