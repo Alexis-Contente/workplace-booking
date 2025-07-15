@@ -1,24 +1,24 @@
 import { supabase } from "./supabase";
 
-// Validation du mot de passe selon tes critères
+// Password validation according to our criteria
 export function validatePassword(password: string): {
   isValid: boolean;
   errors: string[];
 } {
   const errors: string[] = [];
 
-  // Minimum 14 caractères
+  // Minimum 14 characters
   if (password.length < 14) {
     errors.push("Password must be at least 14 characters long");
   }
 
-  // Au moins 2 chiffres
+  // At least 2 numbers
   const digitCount = (password.match(/\d/g) || []).length;
   if (digitCount < 2) {
     errors.push("Password must contain at least 2 numbers");
   }
 
-  // Au moins 1 caractère spécial
+  // At least 1 special character
   const specialChars = /[!@#$%^&*(),.?":{}|<>]/;
   if (!specialChars.test(password)) {
     errors.push(
@@ -32,19 +32,19 @@ export function validatePassword(password: string): {
   };
 }
 
-// Validation email professionnel
+// Validation email professional
 export function validateCompanyEmail(email: string): boolean {
   return email.toLowerCase().endsWith("@quant-cube.com");
 }
 
-// Fonction d'inscription avec validation
+// Sign up function with validation
 export async function signUpWithCompanyEmail(
   email: string,
   password: string,
   firstName: string,
   lastName: string
 ) {
-  // Validation email entreprise
+  // Validation email company
   if (!validateCompanyEmail(email)) {
     return {
       data: null,
@@ -52,7 +52,7 @@ export async function signUpWithCompanyEmail(
     };
   }
 
-  // Validation mot de passe
+  // Validation password
   const passwordValidation = validatePassword(password);
   if (!passwordValidation.isValid) {
     return {
@@ -61,7 +61,7 @@ export async function signUpWithCompanyEmail(
     };
   }
 
-  // Inscription Supabase avec métadonnées
+  // Supabase sign up with metadata
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -74,24 +74,18 @@ export async function signUpWithCompanyEmail(
     },
   });
 
-  // Si inscription réussie, créer l'entrée dans la table users
+  // The user profile is now created automatically by the database trigger
   if (data.user && !error) {
-    const { error: insertError } = await supabase.from("users").insert({
-      id: data.user.id,
-      email: email,
-      first_name: firstName,
-      last_name: lastName,
-    });
-
-    if (insertError) {
-      console.error("Error creating user profile:", insertError);
-    }
+    console.log("User signed up successfully:", data.user.id);
+    console.log(
+      "User profile will be created automatically by database trigger"
+    );
   }
 
   return { data, error };
 }
 
-// Fonction de connexion (version corrigée)
+// Sign in function (corrected version)
 export async function signInWithEmail(email: string, password: string) {
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
@@ -101,13 +95,13 @@ export async function signInWithEmail(email: string, password: string) {
   return { data, error };
 }
 
-// Fonction de déconnexion
+// Sign out function
 export async function signOut() {
   const { error } = await supabase.auth.signOut();
   return { error };
 }
 
-// Obtenir l'utilisateur actuel
+// Get current user
 export async function getCurrentUser() {
   const {
     data: { user },

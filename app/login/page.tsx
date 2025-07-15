@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Header from "../../components/header";
 import Footer from "../../components/footer";
+import { toast } from "sonner";
 import {
   signUpWithCompanyEmail,
   signInWithEmail,
@@ -21,8 +22,6 @@ export default function LoginPage() {
     lastName: "",
   });
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
-  const [errors, setErrors] = useState<string[]>([]);
 
   // FUNCTIONS
   // Functions to handle input changes
@@ -31,10 +30,6 @@ export default function LoginPage() {
       ...formData,
       [e.target.name]: e.target.value,
     });
-    // Clear errors when user starts typing
-    if (errors.length > 0) {
-      setErrors([]);
-    }
   };
 
   // Function to check password criteria in real time
@@ -50,8 +45,6 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setMessage("");
-    setErrors([]);
 
     try {
       if (isLogin) {
@@ -62,9 +55,13 @@ export default function LoginPage() {
         );
 
         if (error) {
-          setErrors([error.message]);
+          toast.error("❌ Login failed", {
+            description: error.message,
+          });
         } else {
-          setMessage("✅ Login successful! Redirecting...");
+          toast.success("✅ Login successful!", {
+            description: "Redirecting...",
+          });
           // Redirect to dashboard
           setTimeout(() => {
             window.location.href = "/";
@@ -101,7 +98,14 @@ export default function LoginPage() {
         }
 
         if (validationErrors.length > 0) {
-          setErrors(validationErrors);
+          // Display each validation error in a separate toast
+          validationErrors.forEach((error, index) => {
+            setTimeout(() => {
+              toast.error("❌ Validation", {
+                description: error,
+              });
+            }, index * 200); // Delay of 200ms between each toast
+          });
           setLoading(false);
           return;
         }
@@ -115,16 +119,20 @@ export default function LoginPage() {
         );
 
         if (error) {
-          setErrors([error.message]);
+          toast.error("❌ Account creation failed", {
+            description: error.message,
+          });
         } else {
-          setMessage(
-            "✅ Account created! Please check your email to confirm your account."
-          );
+          toast.success("✅ Account created successfully!", {
+            description: "Check your email to confirm your account.",
+          });
         }
       }
     } catch (error) {
       console.error("Authentication error:", error);
-      setErrors(["An unexpected error occurred. Please try again."]);
+      toast.error("❌ Unexpected error", {
+        description: "An unexpected error occurred. Please try again.",
+      });
     }
 
     setLoading(false);
@@ -154,8 +162,6 @@ export default function LoginPage() {
                 type="button"
                 onClick={() => {
                   setIsLogin(true);
-                  setErrors([]);
-                  setMessage("");
                 }}
                 className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
                   isLogin
@@ -169,8 +175,6 @@ export default function LoginPage() {
                 type="button"
                 onClick={() => {
                   setIsLogin(false);
-                  setErrors([]);
-                  setMessage("");
                 }}
                 className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
                   !isLogin
@@ -181,23 +185,6 @@ export default function LoginPage() {
                 Sign Up
               </button>
             </div>
-
-            {/* Messages */}
-            {message && (
-              <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
-                <p className="text-sm text-green-800">{message}</p>
-              </div>
-            )}
-
-            {errors.length > 0 && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-                {errors.map((error, index) => (
-                  <p key={index} className="text-sm text-red-800 mb-1">
-                    • {error}
-                  </p>
-                ))}
-              </div>
-            )}
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
