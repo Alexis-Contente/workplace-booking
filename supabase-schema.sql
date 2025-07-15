@@ -51,12 +51,20 @@ SELECT
     'Open Space - Zone A' as location
 FROM generate_series(1, 50);
 
--- Insert Zone B desks (14 desks: B01 to B14)
+-- Insert Zone B desks (16 desks: B01 to B16)
 INSERT INTO public.desks (name, description, location) 
 SELECT 
     'B' || LPAD(generate_series::text, 2, '0') as name,
     'Desk ' || 'B' || LPAD(generate_series::text, 2, '0') as description,
     'Open Space - Zone B' as location
+FROM generate_series(1, 16);
+
+-- Insert Zone C desks (14 desks: C01 to C14)
+INSERT INTO public.desks (name, description, location) 
+SELECT 
+    'C' || LPAD(generate_series::text, 2, '0') as name,
+    'Desk ' || 'C' || LPAD(generate_series::text, 2, '0') as description,
+    'Open Space - Zone C' as location
 FROM generate_series(1, 14);
 
 -- Enable Row Level Security (RLS)
