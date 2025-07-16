@@ -39,7 +39,7 @@ const getRoomName = (location: string): string => {
 // Function to format the display date
 const formatDayLabel = (dateString: string): string => {
   const date = new Date(dateString);
-  const dayNames = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
+  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const dayName = dayNames[date.getDay()];
   const dayNumber = date.getDate();
   const monthNumber = date.getMonth() + 1;
