@@ -20,7 +20,7 @@ export default function Header() {
     }
   };
 
-  // Fonction pour déterminer si un lien est actif
+  // Function to determine if a link is active
   const isActive = (path: string) => {
     if (path === "/" && pathname === "/") return true;
     if (path !== "/" && pathname.startsWith(path)) return true;
@@ -28,7 +28,7 @@ export default function Header() {
   };
 
   // Styles pour les boutons actifs et inactifs
-  const getButtonStyles = (path: string) => {
+  const getButtonStyles = (path: string): string => {
     if (isActive(path)) {
       return "bg-blue-600 text-white px-4 py-2 rounded font-semibold";
     }
@@ -42,7 +42,7 @@ export default function Header() {
           Workplace Booking
         </h1>
         <div className="flex gap-4 items-center">
-          {isAuthenticated ? (
+          {isAuthenticated && (
             // Menu for authenticated users
             <>
               <div className="text-white text-sm">
@@ -68,16 +68,6 @@ export default function Header() {
               >
                 Logout
               </button>
-            </>
-          ) : (
-            // Menu for non-authenticated users
-            <>
-              <Link href="/login">
-                <button className={getButtonStyles("/login")}>Login</button>
-              </Link>
-              <Link href="/about">
-                <button className={getButtonStyles("/about")}>About</button>
-              </Link>
             </>
           )}
         </div>
