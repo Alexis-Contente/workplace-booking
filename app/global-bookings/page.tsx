@@ -4,7 +4,6 @@ import ProtectedRoute from "../../components/ProtectedRoute";
 import Header from "../../components/header";
 import Footer from "../../components/footer";
 import GlobalBookingsTable from "../../components/GlobalBookingsTable";
-import Link from "next/link";
 
 export default function GlobalBookingsPage() {
   return (
@@ -25,20 +24,6 @@ export default function GlobalBookingsPage() {
                     View all bookings for the current week, organized by user
                     and by day.
                   </p>
-                </div>
-                <div className="flex space-x-3">
-                  <Link
-                    href="/reservations"
-                    className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md transition-colors text-sm"
-                  >
-                    My bookings
-                  </Link>
-                  <Link
-                    href="/"
-                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md transition-colors text-sm"
-                  >
-                    Book a desk
-                  </Link>
                 </div>
               </div>
             </div>

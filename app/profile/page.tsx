@@ -200,11 +200,9 @@ export default function Profile() {
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-4xl mx-auto">
             {/* Header */}
-            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-              <h1 className="text-3xl font-bold text-gray-800 mb-2">
-                My Profile
-              </h1>
-              <p className="text-gray-600">
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold text-gray-900">My Profile</h1>
+              <p className="mt-2 text-gray-600">
                 Manage your personal information and view your booking
                 statistics
               </p>
