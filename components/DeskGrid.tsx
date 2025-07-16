@@ -641,7 +641,7 @@ export default function DeskGrid({
                 : "text-gray-600 hover:text-gray-800"
             }`}
           >
-            🏢 DS Room
+            DS Room
           </button>
           <button
             onClick={() => setSelectedRoom("OP")}
@@ -651,7 +651,7 @@ export default function DeskGrid({
                 : "text-gray-600 hover:text-gray-800"
             }`}
           >
-            🩺 OP Room
+            OP Room
           </button>
           <button
             onClick={() => setSelectedRoom("IT")}
@@ -661,7 +661,7 @@ export default function DeskGrid({
                 : "text-gray-600 hover:text-gray-800"
             }`}
           >
-            💻 IT Room
+            IT Room
           </button>
         </div>
       </div>

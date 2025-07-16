@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { useAuth } from "../../hooks/useAuth";
 import { useUserProfile } from "../../hooks/useUserProfile";
 import { supabase } from "../../lib/supabase";
 import ProtectedRoute from "../../components/ProtectedRoute";
@@ -11,49 +10,11 @@ import Footer from "../../components/footer";
 import Link from "next/link";
 
 export default function Profile() {
-  const { user } = useAuth();
   const { profile, loading: profileLoading, updateProfile } = useUserProfile();
   const [editing, setEditing] = useState(false);
   const [editFirstName, setEditFirstName] = useState("");
   const [editLastName, setEditLastName] = useState("");
   const [saveLoading, setSaveLoading] = useState(false);
-  const [bookingStats, setBookingStats] = useState({
-    total: 0,
-    thisMonth: 0,
-    lastLogin: "",
-  });
-
-  // Fetch booking statistics
-  const fetchBookingStats = async () => {
-    if (!user) return;
-
-    try {
-      // Total bookings
-      const { count: totalCount } = await supabase
-        .from("bookings")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", user.id);
-
-      // Monthly bookings (current month)
-      const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
-      const { count: monthlyCount } = await supabase
-        .from("bookings")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", user.id)
-        .gte("booking_date", `${currentMonth}-01`)
-        .lt("booking_date", `${currentMonth}-32`);
-
-      setBookingStats({
-        total: totalCount || 0,
-        thisMonth: monthlyCount || 0,
-        lastLogin: user.last_sign_in_at
-          ? new Date(user.last_sign_in_at).toLocaleDateString()
-          : "Today",
-      });
-    } catch (err) {
-      console.error("Error fetching booking stats:", err);
-    }
-  };
 
   // Save changes
   const handleSave = async () => {
@@ -113,13 +74,6 @@ export default function Profile() {
       setEditLastName(profile.last_name || "");
     }
   }, [profile, editing]);
-
-  // Fetch stats when user is loaded
-  useEffect(() => {
-    if (user) {
-      fetchBookingStats();
-    }
-  }, [user]);
 
   if (profileLoading) {
     return (
@@ -301,45 +255,7 @@ export default function Profile() {
                   </div>
                 </div>
               </div>
-
-              {/* Statistics */}
               <div className="space-y-6">
-                {/* Booking statistics */}
-                <div className="bg-white rounded-lg shadow-md p-6">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                    📊 Booking Statistics
-                  </h3>
-
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">
-                        Total Bookings
-                      </span>
-                      <span className="text-lg font-bold text-blue-600">
-                        {bookingStats.total}
-                      </span>
-                    </div>
-
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">This Month</span>
-                      <span className="text-lg font-bold text-green-600">
-                        {bookingStats.thisMonth}
-                      </span>
-                    </div>
-
-                    <div className="pt-3 border-t border-gray-200">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">
-                          Last Login
-                        </span>
-                        <span className="text-sm text-gray-900">
-                          {bookingStats.lastLogin}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
                 {/* Quick actions */}
                 <div className="bg-white rounded-lg shadow-md p-6">
                   <h3 className="text-lg font-semibold text-gray-800 mb-4">
