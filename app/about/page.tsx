@@ -23,9 +23,7 @@ export default function AboutPage() {
 
               <h2 className="text-2xl font-semibold mb-4">✨ Features</h2>
               <ul className="list-disc list-inside text-gray-700 space-y-2 mb-6">
-                <li>
-                  🪑 Reserve from 64 available desks across Zone A and Zone B
-                </li>
+                <li>🪑 Reserve from 54 available desks across three rooms</li>
                 <li>📅 Book desks for future dates</li>
                 <li>📊 View real-time desk availability</li>
                 <li>📋 Manage your reservations easily</li>
