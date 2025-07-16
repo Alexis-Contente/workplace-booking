@@ -9,10 +9,10 @@ import {
 } from "../../lib/desk-helpers";
 import type { Booking } from "../../lib/desk-helpers";
 import ProtectedRoute from "../../components/ProtectedRoute";
-import Header from "../../components/header";
-import Footer from "../../components/footer";
+import Header from "../../components/Header";
+import Footer from "../../components/Footer";
 import Link from "next/link";
-import { LoadingSpinner } from "../../components/ui/spinner";
+import { LoadingSpinner } from "../../components/ui/Spinner";
 
 // Extended booking interface with desk relationship data for UI display
 interface BookingWithDesk extends Booking {

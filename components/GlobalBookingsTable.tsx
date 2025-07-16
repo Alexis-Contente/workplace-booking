@@ -7,7 +7,7 @@ import {
   getCurrentWeekDates,
 } from "../lib/desk-helpers";
 import type { Booking } from "../lib/desk-helpers";
-import { LoadingSpinner } from "./ui/spinner";
+import { LoadingSpinner } from "./ui/Spinner";
 
 // Interface for the data table
 interface WeeklyBookingData {

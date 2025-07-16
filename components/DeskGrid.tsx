@@ -9,7 +9,7 @@ import {
   cancelBooking,
 } from "../lib/desk-helpers";
 import type { DeskWithStatus } from "../lib/desk-helpers";
-import { LoadingSpinner } from "./ui/spinner";
+import { LoadingSpinner } from "./ui/Spinner";
 
 // TYPES
 type DeskGridProps = {
