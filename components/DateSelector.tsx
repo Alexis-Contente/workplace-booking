@@ -25,7 +25,7 @@ export default function DateSelector({
       month: "long",
       year: "numeric",
     };
-    return date.toLocaleDateString("fr-FR", options);
+    return date.toLocaleDateString("en-US", options);
   };
 
   return (
@@ -57,6 +57,7 @@ export default function DateSelector({
           min={today} // Prevent selecting past dates
           max={maxDateStr} // Limit to 15 days in the future
           onChange={(e) => onDateChange(e.target.value)}
+          lang="en"
           className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
       </div>
