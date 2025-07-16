@@ -42,7 +42,7 @@ export default function Profile() {
         .eq("id", profile.id);
 
       if (updateError) {
-        toast.error("❌ Error updating", {
+        toast.error("Error updating", {
           description: "Impossible to update the profile",
         });
       } else {
@@ -53,12 +53,12 @@ export default function Profile() {
         };
         updateProfile(updatedProfile);
         setEditing(false);
-        toast.success("✅ Profile updated", {
+        toast.success("Profile updated", {
           description: "Profile updated successfully!",
         });
       }
     } catch (err) {
-      toast.error("❌ Unexpected error", {
+      toast.error("Unexpected error", {
         description: "An unexpected error occurred",
       });
       console.error("Profile update error:", err);
@@ -88,7 +88,7 @@ export default function Profile() {
       if (!passwordValidation.isValid) {
         passwordValidation.errors.forEach((error, index) => {
           setTimeout(() => {
-            toast.error("❌ Password validation", {
+            toast.error("Password validation", {
               description: error,
             });
           }, index * 200);
@@ -104,7 +104,7 @@ export default function Profile() {
       });
 
       if (signInError) {
-        toast.error("❌ Incorrect password", {
+        toast.error("Incorrect password", {
           description: "The old password is incorrect",
         });
         setPasswordChangeLoading(false);
@@ -117,11 +117,11 @@ export default function Profile() {
       });
 
       if (updateError) {
-        toast.error("❌ Password change failed", {
+        toast.error("Password change failed", {
           description: updateError.message,
         });
       } else {
-        toast.success("✅ Password changed", {
+        toast.success("Password changed", {
           description: "Your password has been updated successfully!",
         });
         // Reset form
@@ -130,7 +130,7 @@ export default function Profile() {
         setChangingPassword(false);
       }
     } catch (err) {
-      toast.error("❌ Unexpected error", {
+      toast.error("Unexpected error", {
         description: "An unexpected error occurred",
       });
       console.error("Password change error:", err);

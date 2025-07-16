@@ -15,6 +15,13 @@ const Toaster = ({ ...props }: ToasterProps) => {
       expand={true}
       offset="20px"
       gap={12}
+      icons={{
+        success: "✅",
+        error: "❌",
+        warning: "⚠️",
+        info: "ℹ️",
+        loading: "⌛️",
+      }}
       toastOptions={{
         style: {
           background: "hsl(var(--background))",

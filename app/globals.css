@@ -119,15 +119,15 @@
 }
 
 /* ============================================
-   STYLES PERSONNALISÉS POUR LES TOASTS SONNER
-   ============================================ */
+    CUSTOM STYLES FOR SONNER TOASTS
+    ============================================ */
 
-/* Container principal des toasts */
+/* Main toast container */
 .toaster {
   z-index: 9999;
 }
 
-/* Toast individuel - Amélioré pour plus de visibilité */
+/* Individual toast - Improved for visibility */
 .my-toast {
   font-family: var(--font-geist-sans), sans-serif;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -144,24 +144,24 @@
   transform: translateY(0) scale(1);
 }
 
-/* Animation d'entrée - Plus dynamique */
+/* Entry animation - More dynamic */
 .my-toast[data-state="open"] {
   animation: slideInBounce 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
-/* Animation de sortie - Plus fluide */
+/* Exit animation - More fluid */
 .my-toast[data-state="closed"] {
   animation: slideOutScale 0.3s ease-in-out;
 }
 
-/* Hover effect - Plus prononcé */
+/* Hover effect - More pronounced */
 .my-toast:hover {
   transform: translateY(-4px) scale(1.02);
   box-shadow: 0 15px 50px -10px rgba(0, 0, 0, 0.3),
     0 0 0 1px rgba(255, 255, 255, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
-/* Styles pour les différents types de toast - Sans bordures, couleurs d'arrière-plan */
+/* Styles for different toast types - No borders, background colors */
 .my-toast[data-type="success"] {
   border: none !important;
   background: linear-gradient(
@@ -202,7 +202,7 @@
   color: hsl(220 10% 25%) !important;
 }
 
-/* Titre du toast - Plus visible */
+/* Toast title - More visible */
 .my-toast [data-title] {
   font-weight: 700;
   font-size: 1rem;
@@ -211,7 +211,7 @@
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
-/* Description du toast - Meilleur contraste */
+/* Toast description - Better contrast */
 .my-toast [data-description] {
   font-size: 0.875rem;
   line-height: 1.5;
@@ -219,7 +219,7 @@
   margin-top: 0.25rem;
 }
 
-/* Bouton de fermeture - Plus visible */
+/* Close button - More visible */
 .my-toast [data-close-button] {
   position: absolute;
   top: 0.75rem;
@@ -243,7 +243,7 @@
   transform: scale(1.1);
 }
 
-/* Animations améliorées */
+/* Improved animations */
 @keyframes slideInBounce {
   from {
     transform: translateX(100%) scale(0.8);
@@ -270,7 +270,7 @@
   }
 }
 
-/* Responsive design amélioré */
+/* Improved responsive design */
 @media (max-width: 640px) {
   .my-toast {
     min-width: 320px;
@@ -288,7 +288,7 @@
   }
 }
 
-/* Mode sombre - Couleurs plus contrastées */
+/* Dark mode - More contrast colors */
 .dark .my-toast {
   background: linear-gradient(
     135deg,

@@ -56,12 +56,12 @@ export default function LoginPage() {
 
         // If login fails, display error message
         if (error) {
-          toast.error("❌ Login failed", {
+          toast.error("Login failed", {
             description: error.message,
           });
           // If login succeeds, display success message and redirect to dashboard
         } else {
-          toast.success("✅ Login successful!", {
+          toast.success("Login successful!", {
             description: "Redirecting...",
           });
           // Redirect to dashboard
@@ -103,7 +103,7 @@ export default function LoginPage() {
           // Display each validation error in a separate toast
           validationErrors.forEach((error, index) => {
             setTimeout(() => {
-              toast.error("❌ Validation", {
+              toast.error("Validation", {
                 description: error,
               });
             }, index * 200); // Delay of 200ms between each toast
@@ -122,12 +122,12 @@ export default function LoginPage() {
 
         // If signup fails, display error message
         if (error) {
-          toast.error("❌ Account creation failed", {
+          toast.error("Account creation failed", {
             description: error.message,
           });
           // If signup succeeds, display success message
         } else {
-          toast.success("✅ Account created successfully!", {
+          toast.success("Account created successfully!", {
             description: "Check your email to confirm your account.",
           });
           // Redirect to login form after successful signup
@@ -138,7 +138,7 @@ export default function LoginPage() {
       }
     } catch (error) {
       console.error("Authentication error:", error);
-      toast.error("❌ Unexpected error", {
+      toast.error("Unexpected error", {
         description: "An unexpected error occurred. Please try again.",
       });
     }

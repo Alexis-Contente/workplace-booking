@@ -71,7 +71,7 @@ export default function GlobalBookingsTable() {
       if (fetchError) {
         setError("Error loading bookings");
         console.error("Error fetching global bookings:", fetchError);
-        toast.error("❌ Error loading", {
+        toast.error("Error loading", {
           description: "Unable to load global bookings",
         });
       } else {
@@ -80,7 +80,7 @@ export default function GlobalBookingsTable() {
     } catch (err) {
       setError("Unexpected error");
       console.error("Unexpected error:", err);
-      toast.error("❌ Unexpected error", {
+      toast.error("Unexpected error", {
         description: "An unexpected error occurred",
       });
     } finally {

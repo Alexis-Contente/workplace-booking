@@ -602,10 +602,10 @@ export async function getUserBookingsWithCleanup(
 // ============================================================================
 
 /**
- * Calcule les dates de la semaine en cours (lundi à vendredi)
- * Peu importe le jour actuel, retourne toujours la semaine complète
+ * Calculates the dates of the current week (Monday to Friday)
+ * Regardless of the current day, it always returns the full week
  *
- * @returns Object avec les dates de lundi à vendredi au format YYYY-MM-DD
+ * @returns Object with the dates of Monday to Friday in YYYY-MM-DD format
  */
 export function getCurrentWeekDates(): {
   monday: string;
@@ -658,10 +658,10 @@ export function getCurrentWeekDates(): {
 }
 
 /**
- * Récupère toutes les réservations pour la semaine en cours
- * Inclut les informations des utilisateurs et des desks
+ * Retrieves all bookings for the current week
+ * Includes user and desk information
  *
- * @returns Promise avec les réservations groupées par date
+ * @returns Promise with bookings grouped by date
  */
 export async function getCurrentWeekBookings(): Promise<{
   bookingsByDate: Record<string, Booking[]>;
@@ -675,7 +675,7 @@ export async function getCurrentWeekBookings(): Promise<{
 }> {
   const weekDates = getCurrentWeekDates();
 
-  // Récupérer toutes les réservations de la semaine
+  // Retrieve all bookings for the current week
   const { data: bookings, error } = await supabase
     .from("bookings")
     .select(
@@ -701,7 +701,7 @@ export async function getCurrentWeekBookings(): Promise<{
     return { bookingsByDate: {}, allUsers: [], error };
   }
 
-  // Grouper les réservations par date
+  // Group bookings by date
   const bookingsByDate: Record<string, Booking[]> = {};
   weekDates.dates.forEach((date) => {
     bookingsByDate[date] = [];
@@ -713,7 +713,7 @@ export async function getCurrentWeekBookings(): Promise<{
     }
   });
 
-  // Récupérer tous les utilisateurs qui ont des réservations cette semaine
+  // Retrieve all users who have bookings this week
   const uniqueUsers = new Map();
   bookings?.forEach((booking) => {
     if (booking.users && booking.users.id) {

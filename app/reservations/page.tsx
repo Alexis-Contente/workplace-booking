@@ -40,7 +40,7 @@ export default function ReservationsPage() {
       } = await getUserBookingsWithCleanup(user?.id, 50);
 
       if (fetchError) {
-        toast.error("❌ Error loading", {
+        toast.error("Error loading", {
           description: "Impossible to load your reservations",
         });
         console.error("Error fetching bookings:", fetchError);
@@ -54,7 +54,7 @@ export default function ReservationsPage() {
         }
       }
     } catch (err) {
-      toast.error("❌ Unexpected error", {
+      toast.error("Unexpected error", {
         description: "An unexpected error occurred",
       });
       console.error("Unexpected error:", err);
@@ -71,19 +71,19 @@ export default function ReservationsPage() {
       const { success, error: cancelError } = await cancelBooking(bookingId);
 
       if (cancelError || !success) {
-        toast.error("❌ Error cancelling", {
+        toast.error("Error cancelling", {
           description: "Impossible to cancel the reservation",
         });
         console.error("Cancel error:", cancelError);
       } else {
         // Refresh data and show success message
         await fetchBookings();
-        toast.success("✅ Reservation cancelled", {
+        toast.success("Reservation cancelled", {
           description: `Reservation for ${deskName} cancelled successfully!`,
         });
       }
     } catch (err) {
-      toast.error("❌ Unexpected error", {
+      toast.error("Unexpected error", {
         description: "An unexpected error occurred",
       });
       console.error("Unexpected cancel error:", err);
