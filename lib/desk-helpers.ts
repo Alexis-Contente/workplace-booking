@@ -55,6 +55,7 @@ export interface Booking {
   };
   desks?: {
     name: string;
+    location?: string;
   };
 }
 
@@ -599,6 +600,135 @@ export async function getUserBookingsWithCleanup(
 // ============================================================================
 // ANALYTICS & REPORTING FUNCTIONS
 // ============================================================================
+
+/**
+ * Calcule les dates de la semaine en cours (lundi à vendredi)
+ * Peu importe le jour actuel, retourne toujours la semaine complète
+ *
+ * @returns Object avec les dates de lundi à vendredi au format YYYY-MM-DD
+ */
+export function getCurrentWeekDates(): {
+  monday: string;
+  tuesday: string;
+  wednesday: string;
+  thursday: string;
+  friday: string;
+  dates: string[];
+} {
+  const today = new Date();
+  const currentDay = today.getDay(); // 0 = dimanche, 1 = lundi, ..., 6 = samedi
+
+  // Calculer le lundi de la semaine en cours
+  const monday = new Date(today);
+  const daysFromMonday = currentDay === 0 ? 6 : currentDay - 1; // Si dimanche (0), alors -6 jours
+  monday.setDate(today.getDate() - daysFromMonday);
+
+  // Calculer les autres jours de la semaine
+  const tuesday = new Date(monday);
+  tuesday.setDate(monday.getDate() + 1);
+
+  const wednesday = new Date(monday);
+  wednesday.setDate(monday.getDate() + 2);
+
+  const thursday = new Date(monday);
+  thursday.setDate(monday.getDate() + 3);
+
+  const friday = new Date(monday);
+  friday.setDate(monday.getDate() + 4);
+
+  // Convertir en format YYYY-MM-DD
+  const formatDate = (date: Date) => date.toISOString().split("T")[0];
+
+  const dates = [
+    formatDate(monday),
+    formatDate(tuesday),
+    formatDate(wednesday),
+    formatDate(thursday),
+    formatDate(friday),
+  ];
+
+  return {
+    monday: dates[0],
+    tuesday: dates[1],
+    wednesday: dates[2],
+    thursday: dates[3],
+    friday: dates[4],
+    dates,
+  };
+}
+
+/**
+ * Récupère toutes les réservations pour la semaine en cours
+ * Inclut les informations des utilisateurs et des desks
+ *
+ * @returns Promise avec les réservations groupées par date
+ */
+export async function getCurrentWeekBookings(): Promise<{
+  bookingsByDate: Record<string, Booking[]>;
+  allUsers: Array<{
+    id: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+  }>;
+  error: PostgrestError | null;
+}> {
+  const weekDates = getCurrentWeekDates();
+
+  // Récupérer toutes les réservations de la semaine
+  const { data: bookings, error } = await supabase
+    .from("bookings")
+    .select(
+      `
+      *,
+      users:user_id (
+        id,
+        first_name,
+        last_name,
+        email
+      ),
+      desks:desk_id (
+        name,
+        location
+      )
+    `
+    )
+    .in("booking_date", weekDates.dates)
+    .eq("status", "active")
+    .order("booking_date");
+
+  if (error) {
+    return { bookingsByDate: {}, allUsers: [], error };
+  }
+
+  // Grouper les réservations par date
+  const bookingsByDate: Record<string, Booking[]> = {};
+  weekDates.dates.forEach((date) => {
+    bookingsByDate[date] = [];
+  });
+
+  bookings?.forEach((booking) => {
+    if (booking.booking_date && bookingsByDate[booking.booking_date]) {
+      bookingsByDate[booking.booking_date].push(booking);
+    }
+  });
+
+  // Récupérer tous les utilisateurs qui ont des réservations cette semaine
+  const uniqueUsers = new Map();
+  bookings?.forEach((booking) => {
+    if (booking.users && booking.users.id) {
+      uniqueUsers.set(booking.users.id, booking.users);
+    }
+  });
+
+  const allUsers = Array.from(uniqueUsers.values()).sort((a, b) =>
+    `${a.first_name} ${a.last_name}`.localeCompare(
+      `${b.first_name} ${b.last_name}`
+    )
+  );
+
+  return { bookingsByDate, allUsers, error: null };
+}
 
 /**
  * Generates usage statistics for the booking system

@@ -56,6 +56,11 @@ export default function Header() {
                   Reservations
                 </button>
               </Link>
+              <Link href="/global-bookings">
+                <button className={getButtonStyles("/global-bookings")}>
+                  Overview
+                </button>
+              </Link>
               <Link href="/profile">
                 <button className={getButtonStyles("/profile")}>Profile</button>
               </Link>
