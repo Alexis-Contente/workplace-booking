@@ -54,10 +54,12 @@ export default function LoginPage() {
           formData.password
         );
 
+        // If login fails, display error message
         if (error) {
           toast.error("❌ Login failed", {
             description: error.message,
           });
+          // If login succeeds, display success message and redirect to dashboard
         } else {
           toast.success("✅ Login successful!", {
             description: "Redirecting...",
@@ -118,14 +120,20 @@ export default function LoginPage() {
           formData.lastName.trim()
         );
 
+        // If signup fails, display error message
         if (error) {
           toast.error("❌ Account creation failed", {
             description: error.message,
           });
+          // If signup succeeds, display success message
         } else {
           toast.success("✅ Account created successfully!", {
             description: "Check your email to confirm your account.",
           });
+          // Redirect to login form after successful signup
+          setTimeout(() => {
+            setIsLogin(true);
+          }, 1500);
         }
       }
     } catch (error) {
@@ -150,9 +158,7 @@ export default function LoginPage() {
                 {isLogin ? "Login" : "Sign Up"}
               </h1>
               <p className="text-gray-600">
-                {isLogin
-                  ? "Sign in to your account"
-                  : "Create your QuantCube account"}
+                {isLogin ? "Sign in to your account" : "Create your account"}
               </p>
             </div>
 
@@ -196,7 +202,7 @@ export default function LoginPage() {
                         htmlFor="firstName"
                         className="block text-sm font-medium text-gray-700 mb-1"
                       >
-                        First Name *
+                        First Name
                       </label>
                       <input
                         type="text"
@@ -214,7 +220,7 @@ export default function LoginPage() {
                         htmlFor="lastName"
                         className="block text-sm font-medium text-gray-700 mb-1"
                       >
-                        Last Name *
+                        Last Name
                       </label>
                       <input
                         type="text"
@@ -236,7 +242,7 @@ export default function LoginPage() {
                   htmlFor="email"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Email *
+                  Email
                 </label>
                 <input
                   type="email"
@@ -255,7 +261,7 @@ export default function LoginPage() {
                   htmlFor="password"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Password *
+                  Password
                 </label>
                 <input
                   type="password"
@@ -318,7 +324,7 @@ export default function LoginPage() {
                     htmlFor="confirmPassword"
                     className="block text-sm font-medium text-gray-700 mb-1"
                   >
-                    Confirm Password *
+                    Confirm Password
                   </label>
                   <input
                     type="password"
